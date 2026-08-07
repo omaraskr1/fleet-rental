@@ -127,6 +127,33 @@ scripts/
   reset-test-data.ps1      clears bookings so the suite is repeatable
 ```
 
+### Where a new feature belongs
+
+`FleetRental.Application` is organized as vertical slices, not by technical
+role: `Auth/`, `Availability/`, `Bookings/`, `Cars/`, `Notifications/`,
+`Tenants/` each hold their own service and DTOs together. A new feature
+(vehicle maintenance, analytics) gets its own folder here the same way —
+`Maintenance/MaintenanceService.cs` + `Maintenance/MaintenanceDtos.cs`, not a
+service dropped into a shared `Services/` bucket. `Abstractions/` and
+`Common/` stay reserved for things genuinely shared across every feature.
+
+`FleetRental.Infrastructure` and `FleetRental.Api` are organized by technical
+concern instead (`Controllers/`, `Persistence/Configurations/`, `Security/`)
+— that's the idiomatic convention for those layers, not a smell to fix. EF
+Core's `ApplyConfigurationsFromAssembly` is the reason entity configurations
+live together rather than beside each feature's service.
+
+**`FleetRental.Domain`'s entities and enums stay in `Entities/`/`Enums/`
+regardless of feature, and this is deliberate, not an oversight.** EF Core's
+migration snapshot (`FleetRentalDbContextModelSnapshot.cs`) identifies every
+entity by its full CLR namespace as a string key. Moving `Car` from
+`FleetRental.Domain.Entities` into a `FleetRental.Domain.Cars` namespace
+would make EF's change-detection see that as the old entity being deleted
+and a new one added — generating a migration that drops and recreates every
+table. A new domain concept's entities go in `Entities/` and `Enums/`
+alongside the existing ones; only `TenantEntity`/`Entity` inheritance and a
+sensible class name are what identify which feature they belong to.
+
 Backend dependencies point strictly inward:
 `Api → Infrastructure → Application → Domain`.
 
