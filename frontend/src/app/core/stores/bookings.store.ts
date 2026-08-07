@@ -133,11 +133,16 @@ export class BookingsStore {
     try {
       this.replace(await operation());
     } catch (error) {
-      this._error.set((error as Error).message);
-
       // A 409 means someone else claimed the dates, so the cached queue is now
       // wrong. Refetch rather than leave the admin looking at stale rows.
+      //
+      // loadAllBookings() clears _error as its first step, so the message must be
+      // set AFTER it returns — setting it before was a real bug: the refetch
+      // silently wiped the "someone else claimed these dates" explanation before
+      // the admin-requests page ever rendered it, leaving the admin looking at a
+      // queue that had just changed for no visible reason.
       await this.loadAllBookings();
+      this._error.set((error as Error).message);
       throw error;
     } finally {
       this._submitting.set(false);

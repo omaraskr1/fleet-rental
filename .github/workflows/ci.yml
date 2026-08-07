@@ -91,10 +91,11 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Runs under Vitest in jsdom (the Angular 22 default), not a real browser —
+      # no --browsers flag, so no Chrome/Playwright install is needed on the runner.
       - name: Unit tests
         working-directory: frontend
-        run: npm test -- --watch=false --browsers=ChromeHeadless
-        continue-on-error: true # TODO: drop once task 15 lands frontend tests
+        run: npm test -- --no-watch
 
       - name: Production build
         working-directory: frontend
