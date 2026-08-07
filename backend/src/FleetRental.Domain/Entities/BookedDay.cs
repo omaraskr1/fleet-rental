@@ -21,7 +21,7 @@ namespace FleetRental.Domain.Entities;
 /// Rows are written when a booking is approved and removed when it is cancelled,
 /// which is why <see cref="Booking"/> is the only thing that may create them.
 /// </remarks>
-public class BookedDay : Entity
+public class BookedDay : TenantEntity
 {
     private BookedDay() { } // EF Core
 

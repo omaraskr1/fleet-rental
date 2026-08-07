@@ -14,16 +14,21 @@ namespace FleetRental.Application.Auth;
 public class AuthService(
     IFleetRentalDbContext db,
     IPasswordHasher passwordHasher,
-    ITokenGenerator tokenGenerator)
+    ITokenGenerator tokenGenerator,
+    ITenantContext tenantContext)
 {
     private const int MinimumPasswordLength = 8;
 
     public async Task<AuthResponse> SignUpAsync(SignUpRequest request, CancellationToken cancellationToken = default)
     {
         Validate(request);
+        RequireTenant();
 
         var email = User.NormalizeEmail(request.Email);
 
+        // Filtered to the current tenant automatically, so this checks "already a
+        // client of THIS company" — the same person may hold an account with
+        // another rental business.
         if (await db.Users.AnyAsync(u => u.Email == email, cancellationToken))
         {
             throw ValidationException.Single(nameof(request.Email), "An account with this email already exists.");
@@ -45,8 +50,12 @@ public class AuthService(
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
+        RequireTenant();
+
         var email = User.NormalizeEmail(request.Email);
 
+        // Tenant-filtered: an account with this email at a different rental
+        // company is invisible here, which is what keeps the businesses separate.
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
         // Same message whether the email is unknown or the password is wrong, so the
@@ -129,6 +138,22 @@ public class AuthService(
             ExpiresAt = token.ExpiresAt,
             User = UserDto.FromEntity(user),
         };
+    }
+
+    /// <summary>
+    /// Auth always happens inside a tenant. Without this the query filters would
+    /// silently match nothing and a signup would look like "email already taken"
+    /// was false while the insert then failed — a confusing failure instead of a
+    /// clear one.
+    /// </summary>
+    private void RequireTenant()
+    {
+        if (!tenantContext.HasTenant)
+        {
+            throw ValidationException.Single(
+                "tenant",
+                "No company selected. Send the company code in the X-Tenant-Code header.");
+        }
     }
 
     private static void Validate(SignUpRequest request)

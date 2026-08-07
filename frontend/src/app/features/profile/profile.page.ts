@@ -7,6 +7,7 @@ import {
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { PushService } from '../../core/services/push.service';
+import { TenantStore } from '../../core/stores/tenant.store';
 
 @Component({
   selector: 'app-profile',
@@ -20,6 +21,8 @@ import { PushService } from '../../core/services/push.service';
     </ion-header>
 
     <ion-content>
+      <ion-note class="company">Booking with {{ tenant.name() }}</ion-note>
+
       @if (auth.user(); as user) {
         <ion-list lines="full">
           <ion-item><ion-label><small>Name</small><p>{{ user.fullName }}</p></ion-label></ion-item>
@@ -45,17 +48,26 @@ import { PushService } from '../../core/services/push.service';
           <ion-button expand="block" (click)="goToLogin()">Sign in</ion-button>
         </div>
       }
+
+      <div class="switch">
+        <ion-button expand="block" fill="clear" size="small" (click)="switchCompany()">
+          Not {{ tenant.name() }}? Switch company
+        </ion-button>
+      </div>
     </ion-content>
   `,
   styles: `
+    .company { display: block; text-align: center; padding: 12px 16px 0; font-size: 0.85rem; }
     small { color: var(--ion-color-medium); font-size: 0.75rem; }
     .actions { padding: 24px 16px; display: flex; flex-direction: column; gap: 12px; }
     .empty { padding: 64px 24px; text-align: center; display: flex;
              flex-direction: column; gap: 16px; }
+    .switch { padding: 0 16px 24px; }
   `,
 })
 export class ProfilePage {
   protected readonly auth = inject(AuthStore);
+  protected readonly tenant = inject(TenantStore);
   private readonly push = inject(PushService);
   private readonly router = inject(Router);
 
@@ -65,6 +77,16 @@ export class ProfilePage {
     await this.push.unregister();
     this.auth.signOut();
     await this.router.navigate(['/tabs/cars'], { replaceUrl: true });
+  }
+
+  protected async switchCompany(): Promise<void> {
+    // A different company means a different account, so the session goes with it
+    // — staying signed in would carry one business's token into another's screens
+    // for the instant before the tenant guard catches it.
+    await this.push.unregister();
+    this.auth.signOut();
+    this.tenant.clear();
+    await this.router.navigate(['/select-company'], { replaceUrl: true });
   }
 
   protected goToAdmin(): void {

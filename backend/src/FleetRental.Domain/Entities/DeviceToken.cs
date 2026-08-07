@@ -8,7 +8,7 @@ namespace FleetRental.Domain.Entities;
 /// the app an FCM/APNs token at runtime; this is where it is parked so the backend
 /// can reach the device when a booking is decided.
 /// </summary>
-public class DeviceToken : Entity
+public class DeviceToken : TenantEntity
 {
     private DeviceToken() { } // EF Core
 

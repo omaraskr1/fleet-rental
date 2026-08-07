@@ -8,7 +8,7 @@ namespace FleetRental.Domain.Entities;
 /// A rentable vehicle in the fleet. Aggregate root for its photos and the
 /// authority on whether a given date range can be booked.
 /// </summary>
-public class Car : Entity
+public class Car : TenantEntity
 {
     private readonly List<CarPhoto> _photos = [];
     private readonly List<Booking> _bookings = [];

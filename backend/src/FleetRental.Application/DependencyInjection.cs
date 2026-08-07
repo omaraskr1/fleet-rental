@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<AvailabilityService>();
         services.AddScoped<AuthService>();
         services.AddScoped<BookingNotificationService>();
+        services.AddScoped<Tenants.TenantService>();
 
         return services;
     }

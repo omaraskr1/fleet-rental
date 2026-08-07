@@ -30,6 +30,12 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         Environment.GetEnvironmentVariable("FLEETRENTAL_TEST_CONNECTION")
         ?? "Server=.\\SQLEXPRESS;Database=FleetRental_Test;Trusted_Connection=True;TrustServerCertificate=True";
 
+    /// <summary>
+    /// Tenant used by tests that are not themselves about tenancy. They still run
+    /// inside one, because after this change every request does.
+    /// </summary>
+    public const string DefaultTenantCode = "test-fleet";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(Environments.Development);
@@ -53,7 +59,7 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
 
         // Recreated from migrations so the schema under test is exactly the one
-        // that ships — including UX_BookedDays_Car_Date.
+        // that ships — including UX_BookedDays_Car_Date and UX_Users_Tenant_Email.
         await db.Database.EnsureDeletedAsync();
         await db.Database.MigrateAsync();
     }
@@ -66,7 +72,18 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await base.DisposeAsync();
     }
 
-    /// <summary>Clears transactional data between tests, keeping the schema.</summary>
+    /// <summary>
+    /// An HTTP client scoped to a tenant via the company-code header — the same
+    /// path a real client app takes on first launch.
+    /// </summary>
+    public ApiClient CreateTenantClient(string tenantCode = DefaultTenantCode)
+    {
+        var http = CreateClient();
+        http.DefaultRequestHeaders.Add("X-Tenant-Code", tenantCode);
+        return new ApiClient(http);
+    }
+
+    /// <summary>Clears all data between tests, keeping the schema.</summary>
     public async Task ResetAsync()
     {
         using var scope = Services.CreateScope();
@@ -82,42 +99,89 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             DELETE FROM CarPhotos;
             DELETE FROM Cars;
             DELETE FROM Users;
+            DELETE FROM Tenants;
             """);
     }
 
-    /// <summary>Creates an administrator and returns their credentials.</summary>
-    public async Task<(string Email, string Password)> SeedAdminAsync(
-        string email = "admin@test.local",
-        string password = "AdminPass123")
+    /// <summary>Creates a tenant and returns its id.</summary>
+    public async Task<Guid> SeedTenantAsync(string code = DefaultTenantCode, string? name = null)
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
-        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
 
-        db.Users.Add(User.RegisterAdmin(email, hasher.Hash(password), "Test Admin"));
+        using var _ = tenantContext.BypassIsolation();
+
+        var normalized = Tenant.NormalizeCode(code);
+        var existing = await db.Tenants.FirstOrDefaultAsync(t => t.Code == normalized);
+
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+
+        var tenant = Tenant.Create(name ?? $"{code} Fleet", normalized);
+        db.Tenants.Add(tenant);
         await db.SaveChangesAsync();
+
+        return tenant.Id;
+    }
+
+    public async Task SuspendTenantAsync(Guid tenantId)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        using var _ = tenantContext.BypassIsolation();
+
+        var tenant = await db.Tenants.SingleAsync(t => t.Id == tenantId);
+        tenant.Suspend();
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Creates an administrator inside a tenant and returns their credentials.</summary>
+    public async Task<(string Email, string Password)> SeedAdminAsync(
+        Guid? tenantId = null,
+        string email = "admin@test.local",
+        string password = "AdminPass123")
+    {
+        var tenant = tenantId ?? await SeedTenantAsync();
+
+        await InTenantScopeAsync(tenant, (db, hasher) =>
+        {
+            db.Users.Add(User.RegisterAdmin(email, hasher.Hash(password), "Test Admin"));
+            return Task.CompletedTask;
+        });
 
         return (email, password);
     }
 
-    /// <summary>Creates a bookable car and returns its id.</summary>
-    public async Task<Guid> SeedCarAsync(string name = "Test Car", CarStatus status = CarStatus.Active)
+    /// <summary>Creates a bookable car inside a tenant and returns its id.</summary>
+    public async Task<Guid> SeedCarAsync(
+        Guid? tenantId = null,
+        string name = "Test Car",
+        CarStatus status = CarStatus.Active)
     {
-        using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenant = tenantId ?? await SeedTenantAsync();
+        Guid carId = Guid.Empty;
 
-        var car = Car.Create(name, "Seeded for tests", CarCategory.Van, 8, 300m);
-        car.AddPhoto("https://example.com/car.jpg", name, isPrimary: true);
-
-        if (status != CarStatus.Active)
+        await InTenantScopeAsync(tenant, (db, _) =>
         {
-            car.ChangeStatus(status);
-        }
+            var car = Car.Create(name, "Seeded for tests", CarCategory.Van, 8, 300m);
+            car.AddPhoto("https://example.com/car.jpg", name, isPrimary: true);
 
-        db.Cars.Add(car);
-        await db.SaveChangesAsync();
+            if (status != CarStatus.Active)
+            {
+                car.ChangeStatus(status);
+            }
 
-        return car.Id;
+            db.Cars.Add(car);
+            carId = car.Id;
+            return Task.CompletedTask;
+        });
+
+        return carId;
     }
 
     /// <summary>Soft-disables an account so the login path can be exercised.</summary>
@@ -125,6 +189,9 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        using var _ = tenantContext.BypassIsolation();
 
         var normalized = User.NormalizeEmail(email);
         var user = await db.Users.SingleAsync(u => u.Email == normalized);
@@ -138,6 +205,32 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        // Bypassed deliberately: assertions must observe what is actually in the
+        // table, not what the tenant filter would let a request see. Otherwise a
+        // broken filter could make a leak test pass by hiding the evidence.
+        using var _ = tenantContext.BypassIsolation();
+
         return await db.BookedDays.CountAsync(d => d.CarId == carId);
+    }
+
+    /// <summary>
+    /// Runs seeding work as if inside a request for the given tenant, so the
+    /// save-time tenant assignment stamps rows exactly as production would.
+    /// </summary>
+    private async Task InTenantScopeAsync(
+        Guid tenantId,
+        Func<FleetRentalDbContext, IPasswordHasher, Task> work)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        tenantContext.SetTenant(tenantId, "seed");
+
+        await work(db, hasher);
+        await db.SaveChangesAsync();
     }
 }

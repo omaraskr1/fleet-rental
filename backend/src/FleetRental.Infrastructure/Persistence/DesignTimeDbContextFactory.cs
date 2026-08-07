@@ -21,6 +21,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<FleetRenta
             .UseSqlServer(connectionString)
             .Options;
 
-        return new FleetRentalDbContext(options);
+        // Migrations are schema-only and inherently cross-tenant, so this design-time
+        // context gets an empty tenant context. Query filters are irrelevant here.
+        return new FleetRentalDbContext(options, new Tenancy.TenantContext());
     }
 }

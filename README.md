@@ -29,6 +29,36 @@ All six MVP features are implemented and verified end to end.
 
 ---
 
+## Multi-tenancy
+
+The platform serves multiple rental businesses from one shared database. Each is
+a `Tenant`; every car, booking, event, user and device belongs to exactly one.
+
+- **Isolation is enforced by EF Core global query filters, applied by
+  convention** to every entity implementing `ITenantOwned` — not by remembering
+  a `WHERE TenantId = ...` in each query. A new entity that forgets to derive
+  from `TenantEntity` fails `TenantIsolationTests.Every_persisted_entity_...` in
+  CI rather than silently leaking.
+- **Filters fail closed.** No tenant resolved means the filter matches nothing,
+  not everything — an unknown or missing company code returns an empty result,
+  never another tenant's data.
+- **The tenant travels inside the signed JWT**, not a header. An authenticated
+  caller cannot switch tenants by editing `X-Tenant-Code` — the middleware
+  ignores that header entirely once a token is present. The header only decides
+  which tenant an *anonymous* request (browsing, login) belongs to.
+- **Email is unique per tenant, not platform-wide** — the same person can
+  legitimately hold a client account at two different rental companies.
+- **Clients pick their company once**, by code, on first launch
+  (`select-company.page.ts`). The choice is remembered on the device; every
+  request after that carries it automatically via `tenant.interceptor.ts`.
+
+See `tests/FleetRental.IntegrationTests/TenantIsolationTests.cs` for the tests
+that exercise all of this against real SQL Server, including the deliberate
+attack case (an authenticated client trying to read another company's fleet by
+changing the header).
+
+---
+
 ## Repository layout
 
 ```
@@ -109,6 +139,8 @@ deliberately** rather than signing tokens with a weak key.
 | `ConnectionStrings:FleetRental` | `ConnectionStrings__FleetRental` | SQL Server connection |
 | `Jwt:Key` | `Jwt__Key` | 32+ characters, required |
 | `Seed:AdminPassword` | `Seed__AdminPassword` | Admin seeding is skipped if unset |
+| `Seed:TenantCode` | `Seed__TenantCode` | Company code for the seeded tenant (default `demo-fleet`) |
+| `Platform:ProvisioningKey` | `Platform__ProvisioningKey` | Gates `POST /api/tenants`; unset closes onboarding entirely |
 | `Email:*` | `Email__*` | SMTP; logs instead of sending when `Enabled` is false |
 | `Cors:AllowedOrigins` | — | Must include the Capacitor origins |
 

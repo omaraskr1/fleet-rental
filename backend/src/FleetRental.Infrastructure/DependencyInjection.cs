@@ -2,6 +2,7 @@ using FleetRental.Application.Abstractions;
 using FleetRental.Infrastructure.Notifications;
 using FleetRental.Infrastructure.Persistence;
 using FleetRental.Infrastructure.Security;
+using FleetRental.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,10 @@ public static class DependencyInjection
         // Application depends on the interface; this is the only place the concrete
         // context is handed over.
         services.AddScoped<IFleetRentalDbContext>(sp => sp.GetRequiredService<FleetRentalDbContext>());
+
+        // Scoped: one tenant per request, resolved by TenantResolutionMiddleware
+        // and read by both the query filters and save-time tenant assignment.
+        services.AddScoped<ITenantContext, TenantContext>();
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));

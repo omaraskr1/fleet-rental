@@ -10,6 +10,7 @@ import { provideIonicAngular } from '@ionic/angular/standalone';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { tenantInterceptor } from './core/interceptors/tenant.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,9 +23,10 @@ export const appConfig: ApplicationConfig = {
 
     provideRouter(routes, withComponentInputBinding()),
 
-    // Order matters: auth attaches the token, then error maps failures. The error
-    // interceptor sits outermost so it sees responses to authenticated requests.
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    // Order matters: tenant scopes the request, auth attaches the token, then
+    // error maps failures. The error interceptor sits outermost so it sees
+    // responses to fully-formed requests.
+    provideHttpClient(withInterceptors([tenantInterceptor, authInterceptor, errorInterceptor])),
 
     provideIonicAngular({
       // Render iOS styling on iOS and Material on Android, which is what makes

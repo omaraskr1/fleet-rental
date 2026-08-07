@@ -24,7 +24,11 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
 
     private static DateOnly Day(int offset) => DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(offset);
 
-    public Task InitializeAsync() => factory.ResetAsync();
+    public async Task InitializeAsync()
+    {
+        await factory.ResetAsync();
+        await factory.SeedTenantAsync();
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -34,15 +38,15 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("a@test.com");
         var bookingA = await clientA.CreateBookingAndGetIdAsync(carId, Day(10), Day(14));
 
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("b@test.com");
         var bookingB = await clientB.CreateBookingAndGetIdAsync(carId, Day(12), Day(16));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
 
         var first = await admin.ApproveAsync(bookingA, "Confirmed");
@@ -67,19 +71,19 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("race-a@test.com");
         var bookingA = await clientA.CreateBookingAndGetIdAsync(carId, Day(20), Day(24));
 
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("race-b@test.com");
         var bookingB = await clientB.CreateBookingAndGetIdAsync(carId, Day(22), Day(26));
 
         // Two separate admin sessions, mimicking two people clicking at once.
-        var adminOne = new ApiClient(factory.CreateClient());
+        var adminOne = factory.CreateTenantClient();
         adminOne.Authenticate(await adminOne.LoginAsync(adminEmail, adminPassword, asAdmin: true));
 
-        var adminTwo = new ApiClient(factory.CreateClient());
+        var adminTwo = factory.CreateTenantClient();
         adminTwo.Authenticate(await adminTwo.LoginAsync(adminEmail, adminPassword, asAdmin: true));
 
         var results = await Task.WhenAll(
@@ -107,15 +111,15 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("adj-a@test.com");
         var bookingA = await clientA.CreateBookingAndGetIdAsync(carId, Day(10), Day(14));
 
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("adj-b@test.com");
         var bookingB = await clientB.CreateBookingAndGetIdAsync(carId, Day(15), Day(18));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
 
         Assert.Equal(HttpStatusCode.OK, (await admin.ApproveAsync(bookingA)).StatusCode);
@@ -130,11 +134,11 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("cancel-a@test.com");
         var bookingA = await clientA.CreateBookingAndGetIdAsync(carId, Day(30), Day(34));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
         await admin.ApproveAsync(bookingA);
         Assert.Equal(5, await factory.CountBookedDaysAsync(carId));
@@ -143,7 +147,7 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         Assert.Equal(0, await factory.CountBookedDaysAsync(carId));
 
         // The dates are genuinely reusable, not just marked cancelled.
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("cancel-b@test.com");
         var bookingB = await clientB.CreateBookingAndGetIdAsync(carId, Day(30), Day(34));
 
@@ -157,11 +161,11 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("rej@test.com");
         var bookingId = await client.CreateBookingAndGetIdAsync(carId, Day(40), Day(44));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
 
         Assert.Equal(HttpStatusCode.OK, (await admin.RejectAsync(bookingId, "Committed")).StatusCode);
@@ -175,12 +179,12 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         // the same dates, and the admin picks.
         var carId = await factory.SeedCarAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("pend-a@test.com");
         Assert.Equal(HttpStatusCode.Created,
             (await clientA.CreateBookingAsync(carId, Day(50), Day(54))).StatusCode);
 
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("pend-b@test.com");
         Assert.Equal(HttpStatusCode.Created,
             (await clientB.CreateBookingAsync(carId, Day(50), Day(54))).StatusCode);
@@ -194,17 +198,17 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var clientA = new ApiClient(factory.CreateClient());
+        var clientA = factory.CreateTenantClient();
         await clientA.SignUpAndAuthenticateAsync("held-a@test.com");
         var bookingA = await clientA.CreateBookingAndGetIdAsync(carId, Day(60), Day(64));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
         await admin.ApproveAsync(bookingA);
 
         // Better to refuse now with a clear message than let the client fill in
         // event details for a range that cannot be granted.
-        var clientB = new ApiClient(factory.CreateClient());
+        var clientB = factory.CreateTenantClient();
         await clientB.SignUpAndAuthenticateAsync("held-b@test.com");
         var response = await clientB.CreateBookingAsync(carId, Day(62), Day(66));
 
@@ -217,15 +221,15 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         var carId = await factory.SeedCarAsync();
         var (adminEmail, adminPassword) = await factory.SeedAdminAsync();
 
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("avail@test.com");
         var bookingId = await client.CreateBookingAndGetIdAsync(carId, Day(70), Day(72));
 
-        var admin = new ApiClient(factory.CreateClient());
+        var admin = factory.CreateTenantClient();
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
         await admin.ApproveAsync(bookingId);
 
-        var anonymous = new ApiClient(factory.CreateClient());
+        var anonymous = factory.CreateTenantClient();
         var availability = await anonymous.GetAsync<ApiClient.AvailabilityResult>(
             $"/api/cars/{carId}/availability?from={Day(65):yyyy-MM-dd}&to={Day(80):yyyy-MM-dd}");
 

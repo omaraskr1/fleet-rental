@@ -12,7 +12,15 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
 {
     private static DateOnly Day(int offset) => DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(offset);
 
-    public Task InitializeAsync() => factory.ResetAsync();
+    public async Task InitializeAsync()
+    {
+        await factory.ResetAsync();
+
+        // Every request now belongs to a tenant, so one has to exist before a
+        // client can even sign up. Tests that seed a car or admin get this for
+        // free; the ones here that only sign up need it explicitly.
+        await factory.SeedTenantAsync();
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -21,7 +29,9 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     {
         await factory.SeedCarAsync();
 
-        var response = await factory.CreateClient().GetAsync("/api/cars");
+        // Anonymous, but still tenant-scoped: the company code identifies whose
+        // catalogue is being browsed, and no account is needed to look.
+        var response = await factory.CreateTenantClient().Http.GetAsync("/api/cars");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -30,7 +40,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     public async Task Booking_requires_authentication()
     {
         var carId = await factory.SeedCarAsync();
-        var anonymous = new ApiClient(factory.CreateClient());
+        var anonymous = factory.CreateTenantClient();
 
         var response = await anonymous.CreateBookingAsync(carId, Day(5), Day(7));
 
@@ -40,7 +50,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task A_client_cannot_read_the_admin_queue()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("nosy@test.com");
 
         var response = await client.Http.GetAsync("/api/bookings");
@@ -53,7 +63,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     {
         // The obvious privilege escalation: approve yourself and take the car.
         var carId = await factory.SeedCarAsync();
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("selfapprove@test.com");
         var bookingId = await client.CreateBookingAndGetIdAsync(carId, Day(5), Day(7));
 
@@ -70,11 +80,11 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
         // unguessable — the DTO carries the other client's name and email.
         var carId = await factory.SeedCarAsync();
 
-        var owner = new ApiClient(factory.CreateClient());
+        var owner = factory.CreateTenantClient();
         await owner.SignUpAndAuthenticateAsync("owner@test.com");
         var bookingId = await owner.CreateBookingAndGetIdAsync(carId, Day(5), Day(7));
 
-        var stranger = new ApiClient(factory.CreateClient());
+        var stranger = factory.CreateTenantClient();
         await stranger.SignUpAndAuthenticateAsync("stranger@test.com");
 
         var response = await stranger.Http.GetAsync($"/api/bookings/{bookingId}");
@@ -87,11 +97,11 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     {
         var carId = await factory.SeedCarAsync();
 
-        var owner = new ApiClient(factory.CreateClient());
+        var owner = factory.CreateTenantClient();
         await owner.SignUpAndAuthenticateAsync("cowner@test.com");
         var bookingId = await owner.CreateBookingAndGetIdAsync(carId, Day(5), Day(7));
 
-        var stranger = new ApiClient(factory.CreateClient());
+        var stranger = factory.CreateTenantClient();
         await stranger.SignUpAndAuthenticateAsync("cstranger@test.com");
 
         var response = await stranger.CancelAsync(bookingId);
@@ -104,11 +114,11 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     {
         var carId = await factory.SeedCarAsync();
 
-        var alice = new ApiClient(factory.CreateClient());
+        var alice = factory.CreateTenantClient();
         await alice.SignUpAndAuthenticateAsync("alice@test.com");
         await alice.CreateBookingAsync(carId, Day(5), Day(7));
 
-        var bob = new ApiClient(factory.CreateClient());
+        var bob = factory.CreateTenantClient();
         await bob.SignUpAndAuthenticateAsync("bob@test.com");
         await bob.CreateBookingAsync(carId, Day(20), Day(22));
 
@@ -123,7 +133,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task A_client_cannot_create_a_car()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("carmaker@test.com");
 
         var response = await client.Http.PostAsJsonAsync("/api/cars", new
@@ -141,7 +151,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task A_client_cannot_read_the_fleet_calendar()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAndAuthenticateAsync("fleetpeek@test.com");
 
         var response = await client.Http.GetAsync("/api/fleet/availability");
@@ -153,7 +163,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     public async Task Public_signup_cannot_mint_an_administrator()
     {
         // Guards against the role being accepted from request input.
-        var response = await factory.CreateClient().PostAsJsonAsync("/api/auth/signup", new
+        var response = await factory.CreateTenantClient().Http.PostAsJsonAsync("/api/auth/signup", new
         {
             email = "wannabe@test.com",
             password = "Password123",
@@ -170,10 +180,10 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task A_client_account_is_refused_at_the_admin_login()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAsync("notadmin@test.com");
 
-        var response = await factory.CreateClient().PostAsJsonAsync("/api/auth/admin/login", new
+        var response = await factory.CreateTenantClient().Http.PostAsJsonAsync("/api/auth/admin/login", new
         {
             email = "notadmin@test.com",
             password = "ClientPass123",
@@ -185,7 +195,7 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task An_invalid_token_is_rejected()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         client.Authenticate("not.a.real.jwt");
 
         var response = await client.Http.GetAsync("/api/bookings/mine");
@@ -196,12 +206,12 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task A_deactivated_account_cannot_log_in()
     {
-        var client = new ApiClient(factory.CreateClient());
+        var client = factory.CreateTenantClient();
         await client.SignUpAsync("deactivated@test.com");
 
         await factory.DeactivateUserAsync("deactivated@test.com");
 
-        var response = await factory.CreateClient().PostAsJsonAsync("/api/auth/login", new
+        var response = await factory.CreateTenantClient().Http.PostAsJsonAsync("/api/auth/login", new
         {
             email = "deactivated@test.com",
             password = "ClientPass123",

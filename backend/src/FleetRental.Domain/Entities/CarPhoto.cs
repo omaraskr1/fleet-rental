@@ -6,7 +6,7 @@ namespace FleetRental.Domain.Entities;
 /// One image for a car. Phase 1 renders only the primary photo on the listing
 /// screen; Phase 2's gallery reads the same rows, so no migration is needed then.
 /// </summary>
-public class CarPhoto : Entity
+public class CarPhoto : TenantEntity
 {
     private CarPhoto() { } // EF Core
 

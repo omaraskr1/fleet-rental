@@ -9,7 +9,7 @@ namespace FleetRental.Domain.Entities;
 /// Aggregate root — every status change goes through the methods here so the
 /// transition rules live in exactly one place.
 /// </summary>
-public class Booking : Entity
+public class Booking : TenantEntity
 {
     private readonly List<BookedDay> _bookedDays = [];
 
