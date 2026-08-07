@@ -1,5 +1,5 @@
 tasks for EventDrive system
--git environment 
+-publish this project on github
 
 -try to make dev and test and uat and prod enviroments
 
@@ -8,3 +8,7 @@ and integrations test
 and any tests that always make me sure when i change that the system hasnot bugs and help for gab that i don't has tester
 
 -add machine learning and datamining that help the user in analysis and dashboard and monitor his system
+
+-system be features based
+
+-system support more then client for me as system i don't know how could we do think but i think concept of multi tenant will help us
