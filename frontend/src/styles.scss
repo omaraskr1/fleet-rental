@@ -1,0 +1,14 @@
+/* Ionic core styles — required. */
+@use '@ionic/angular/css/core.css';
+@use '@ionic/angular/css/normalize.css';
+@use '@ionic/angular/css/structure.css';
+@use '@ionic/angular/css/typography.css';
+
+/* Optional utilities used by the page templates (ion-padding et al). */
+@use '@ionic/angular/css/padding.css';
+@use '@ionic/angular/css/float-elements.css';
+@use '@ionic/angular/css/text-alignment.css';
+@use '@ionic/angular/css/flex-utils.css';
+
+/* Honours the OS light/dark setting on both platforms. */
+@use '@ionic/angular/css/palettes/dark.system.css';

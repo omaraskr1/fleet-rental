@@ -1,0 +1,195 @@
+/**
+ * Mirrors the API's DTOs. Enum-like fields arrive as strings because the API
+ * serialises enums with JsonStringEnumConverter — so these are string unions
+ * rather than TypeScript enums, and a value the backend adds shows up as a
+ * compile error here instead of a silent mismatch.
+ */
+
+export type CarCategory =
+  | 'Sedan'
+  | 'Suv'
+  | 'Van'
+  | 'Luxury'
+  | 'Convertible'
+  | 'BrandedTruck'
+  | 'Bus';
+
+export type CarStatus = 'Active' | 'Maintenance' | 'Retired';
+
+export type BookingStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+
+export type UserRole = 'Client' | 'Admin';
+
+export type EventType =
+  | 'ProductLaunch'
+  | 'TradeShow'
+  | 'Wedding'
+  | 'CorporateEvent'
+  | 'Photoshoot'
+  | 'RoadShow'
+  | 'Conference'
+  | 'Other';
+
+export type DevicePlatform = 'Ios' | 'Android' | 'Web';
+
+/** ISO date with no time component, e.g. "2026-10-01". */
+export type IsoDate = string;
+
+export interface CarListItem {
+  id: string;
+  name: string;
+  category: CarCategory;
+  seats: number;
+  dailyRate: number;
+  status: CarStatus;
+  primaryPhotoUrl: string | null;
+  availableToday: boolean;
+}
+
+export interface CarPhoto {
+  id: string;
+  url: string;
+  caption: string | null;
+  isPrimary: boolean;
+}
+
+export interface CarDetail {
+  id: string;
+  name: string;
+  description: string;
+  category: CarCategory;
+  seats: number;
+  dailyRate: number;
+  status: CarStatus;
+  licensePlate: string | null;
+  photos: CarPhoto[];
+}
+
+export interface CarAvailability {
+  carId: string;
+  carName: string;
+  windowStart: IsoDate;
+  windowEnd: IsoDate;
+  /** Days held by an approved booking. Everything else in the window is open. */
+  bookedDates: IsoDate[];
+  /** Days with an undecided request — shown as "contested", not blocked. */
+  pendingDates: IsoDate[];
+  carIsBookable: boolean;
+}
+
+export interface FleetAvailability {
+  windowStart: IsoDate;
+  windowEnd: IsoDate;
+  cars: CarAvailability[];
+}
+
+export interface AvailabilityCheck {
+  isAvailable: boolean;
+  conflictingDates: IsoDate[];
+  reason: string | null;
+}
+
+export interface EventSummary {
+  id: string;
+  name: string;
+  type: EventType;
+  location: string;
+  expectedAttendance: number | null;
+  notes: string | null;
+}
+
+export interface Booking {
+  id: string;
+  carId: string;
+  carName: string;
+  carPhotoUrl: string | null;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  startDate: IsoDate;
+  endDate: IsoDate;
+  totalDays: number;
+  status: BookingStatus;
+  clientNotes: string | null;
+  event: EventSummary;
+  decidedAt: string | null;
+  decisionReason: string | null;
+  createdAt: string;
+}
+
+export interface CreateBookingRequest {
+  carId: string;
+  startDate: IsoDate;
+  endDate: IsoDate;
+  clientNotes?: string | null;
+  /** Set to attach another car to an activation the client already registered. */
+  existingEventId?: string | null;
+  eventName?: string | null;
+  eventType?: EventType | null;
+  eventLocation?: string | null;
+  expectedAttendance?: number | null;
+  eventNotes?: string | null;
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  fullName: string;
+  phoneNumber: string | null;
+  role: UserRole;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  expiresAt: string;
+  user: AppUser;
+}
+
+export interface CreateCarRequest {
+  name: string;
+  description: string;
+  category: CarCategory;
+  seats: number;
+  dailyRate: number;
+  licensePlate?: string | null;
+  photoUrls?: string[];
+}
+
+export interface UpdateCarRequest extends CreateCarRequest {
+  status?: CarStatus | null;
+}
+
+/** RFC 7807 problem response, as emitted by the API's exception middleware. */
+export interface ProblemDetails {
+  status: number;
+  title: string;
+  detail: string;
+  instance?: string;
+  errors?: Record<string, string[]>;
+}
+
+export const CAR_CATEGORIES: CarCategory[] = [
+  'Sedan',
+  'Suv',
+  'Van',
+  'Luxury',
+  'Convertible',
+  'BrandedTruck',
+  'Bus',
+];
+
+export const EVENT_TYPES: EventType[] = [
+  'ProductLaunch',
+  'TradeShow',
+  'Wedding',
+  'CorporateEvent',
+  'Photoshoot',
+  'RoadShow',
+  'Conference',
+  'Other',
+];
+
+/** Turns "BrandedTruck" into "Branded Truck" for display. */
+export function humanize(value: string): string {
+  return value.replace(/([a-z])([A-Z])/g, '$1 $2');
+}

@@ -12,3 +12,8 @@ and any tests that always make me sure when i change that the system hasnot bugs
 -system be features based
 
 -system support more then client for me as system i don't know how could we do think but i think concept of multi tenant will help us
+
+- we should have two weidget
+one for user to booking 
+one for the owners of cars to check booking on it and insights and if there is any issue in car or mechanical should do
+and this will take us to module about mickanical of car and logs of it and insights on it and service time 
