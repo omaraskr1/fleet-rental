@@ -59,6 +59,53 @@ changing the header).
 
 ---
 
+## Localization and theming
+
+Every screen in the client app and admin panel supports English and Arabic
+with full RTL, plus a manual light/dark theme independent of the OS setting.
+
+- **Runtime language switching**, not Angular's built-in compile-time i18n —
+  a company code is entered once per install, so shipping a separate binary
+  per language was never on the table. Translations live as plain JSON
+  (`frontend/public/i18n/{en,ar}.json`, one flat key set, 148 keys) fetched and
+  cached by `LocaleStore`. No i18n library dependency.
+- **Dates use the native `Intl` API**, not Angular's `DatePipe` — DatePipe
+  needs `@angular/common/locales/ar` registered against a single `LOCALE_ID`,
+  which is a build-time, one-locale-per-build mechanism that doesn't fit a
+  runtime switch. `LocaleStore.formatDate()` wraps `toLocaleDateString` with
+  the `-u-nu-latn` Unicode extension, so Arabic renders with Arabic month
+  names but Western numerals — the convention Gulf business apps use for
+  dates and money.
+- **RTL is mostly Ionic's own doing.** Setting `dir="rtl"` on `<html>` is the
+  only line of framework wiring required; Ionic mirrors its own components
+  automatically. The custom CSS in this app uses logical properties
+  (`padding-inline-end`, `border-inline-end`, `text-align: start`) rather than
+  `left`/`right` so it mirrors too, and the calendar's prev/next chevrons use
+  `ion-icon`'s `flipRtl` input so "previous" still visually points the
+  correct direction once flex has already reordered the buttons.
+- **Theme uses `dark.class.css`, not `dark.system.css`** — the OS-media-query
+  variant Ionic ships by default has no JS hook to override it.
+  `ThemeStore` toggles the `ion-palette-dark` class on `<html>`, defaulting to
+  the OS preference on first launch and tracking it live thereafter, until the
+  user picks light or dark explicitly.
+- **Backend error messages are not localized.** A validation message from the
+  API (e.g. "Email is required") reaches the Arabic UI in English. Translating
+  those means the API reading `Accept-Language` and maintaining a message
+  catalog per exception — real scope, deliberately left for later rather than
+  silently skipped.
+
+A real defect surfaced during this work, not a hypothetical: `App.ngOnInit`
+originally restored the session, tenant, and locale — but the router's
+initial navigation could evaluate `tenantGuard`/`authGuard` before those
+awaited restores finished, bouncing a returning signed-in user back to
+"sign in" or "select your company" on a hard reload. Fixed by moving
+restoration into a `provideAppInitializer` in `app.config.ts`, which blocks
+bootstrap — and therefore the router's first navigation — until it resolves.
+Verified by reloading directly on a deep, guarded route before and after the
+fix.
+
+---
+
 ## Repository layout
 
 ```

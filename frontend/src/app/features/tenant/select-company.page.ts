@@ -6,6 +6,7 @@ import {
 } from '@ionic/angular/standalone';
 
 import { TenantStore } from '../../core/stores/tenant.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 
 /**
  * First screen on a fresh install: which rental company is this for?
@@ -20,18 +21,18 @@ import { TenantStore } from '../../core/stores/tenant.store';
   template: `
     <ion-content class="ion-padding">
       <div class="panel">
-        <h1>Fleet Rental</h1>
-        <p class="sub">Enter your company code to get started.</p>
+        <h1>{{ locale.t('tenant.title') }}</h1>
+        <p class="sub">{{ locale.t('tenant.subtitle') }}</p>
 
         <ion-item>
-          <ion-label position="stacked">Company code</ion-label>
+          <ion-label position="stacked">{{ locale.t('tenant.codeLabel') }}</ion-label>
           <ion-input
             [(ngModel)]="code"
-            placeholder="e.g. gulf-fleet"
+            [placeholder]="locale.t('tenant.codePlaceholder')"
             autocapitalize="off"
             autocorrect="off"
             (keyup.enter)="submit()" />
-          <ion-note slot="helper">Provided by your fleet operator.</ion-note>
+          <ion-note slot="helper">{{ locale.t('tenant.helper') }}</ion-note>
         </ion-item>
 
         @if (tenant.error(); as error) {
@@ -39,7 +40,7 @@ import { TenantStore } from '../../core/stores/tenant.store';
         }
 
         <ion-button expand="block" [disabled]="!code.trim() || tenant.loading()" (click)="submit()">
-          @if (tenant.loading()) { <ion-spinner name="dots" /> } @else { Continue }
+          @if (tenant.loading()) { <ion-spinner name="dots" /> } @else { {{ locale.t('tenant.continueButton') }} }
         </ion-button>
       </div>
     </ion-content>
@@ -48,13 +49,14 @@ import { TenantStore } from '../../core/stores/tenant.store';
     .panel { max-width: 400px; margin: 15vh auto 0; text-align: center; }
     h1 { font-size: 1.6rem; margin-bottom: 0; }
     .sub { color: var(--ion-color-medium); margin-top: 4px; }
-    ion-item { text-align: left; }
+    ion-item { text-align: start; }
     ion-button { margin-top: 24px; }
     .error { display: block; margin-top: 16px; }
   `,
 })
 export class SelectCompanyPage {
   protected readonly tenant = inject(TenantStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 

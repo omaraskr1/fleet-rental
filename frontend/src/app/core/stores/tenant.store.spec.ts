@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { TenantStore } from './tenant.store';
+import { LocaleStore } from './locale.store';
 import { environment } from '../../../environments/environment';
 
 describe('TenantStore', () => {
@@ -66,6 +67,16 @@ describe('TenantStore', () => {
     });
 
     it('an unknown or suspended company yields the same generic message, never distinguishing the two', async () => {
+      // The message is built via LocaleStore.t(), which returns the raw key
+      // until real translations are loaded — so this test loads them first,
+      // the same way app.ts does before the UI ever shows anything.
+      const locale = TestBed.inject(LocaleStore);
+      const localeInit = locale.init();
+      httpMock.expectOne('/i18n/en.json').flush({
+        tenant: { notFound: 'We couldn\'t find a company with the code "{{code}}".' },
+      });
+      await localeInit;
+
       const promise = store.selectByCode('no-such-company');
 
       httpMock.expectOne(`${environment.apiBaseUrl}/tenants/no-such-company`).flush(

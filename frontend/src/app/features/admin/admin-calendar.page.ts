@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit } from '@angular/core';
 import { IonNote, IonSpinner } from '@ionic/angular/standalone';
 
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 import { toIso } from '../../shared/availability-calendar.component';
 
 interface LaneDay {
@@ -19,8 +20,8 @@ interface LaneDay {
   selector: 'app-admin-calendar',
   imports: [IonSpinner, IonNote],
   template: `
-    <h1>Fleet calendar</h1>
-    <ion-note>Next 30 days across every vehicle.</ion-note>
+    <h1>{{ locale.t('admin.calendar.title') }}</h1>
+    <ion-note>{{ locale.t('admin.calendar.subtitle') }}</ion-note>
 
     @if (store.loading() && !store.fleet()) {
       <div class="state"><ion-spinner /></div>
@@ -29,7 +30,7 @@ interface LaneDay {
         <table>
           <thead>
             <tr>
-              <th class="car">Vehicle</th>
+              <th class="car">{{ locale.t('admin.calendar.vehicle') }}</th>
               @for (day of days(); track day) {
                 <th class="day" [class.weekend]="isWeekend(day)">{{ dayLabel(day) }}</th>
               }
@@ -54,9 +55,9 @@ interface LaneDay {
       </div>
 
       <div class="legend">
-        <span><i class="swatch open"></i> Open</span>
-        <span><i class="swatch pending"></i> Requested</span>
-        <span><i class="swatch booked"></i> Booked</span>
+        <span><i class="swatch open"></i> {{ locale.t('calendar.legendOpen') }}</span>
+        <span><i class="swatch pending"></i> {{ locale.t('calendar.legendPending') }}</span>
+        <span><i class="swatch booked"></i> {{ locale.t('calendar.legendBooked') }}</span>
       </div>
     }
   `,
@@ -65,8 +66,8 @@ interface LaneDay {
     /* Wide content must scroll inside its own container, never the page body. */
     .scroller { overflow-x: auto; margin-top: 20px; }
     table { border-collapse: collapse; font-size: 0.75rem; }
-    th.car, td.car { position: sticky; left: 0; background: var(--ion-background-color);
-                     text-align: left; padding-right: 12px; white-space: nowrap;
+    th.car, td.car { position: sticky; inset-inline-start: 0; background: var(--ion-background-color);
+                     text-align: start; padding-inline-end: 12px; white-space: nowrap;
                      min-width: 150px; font-weight: 500; z-index: 1; }
     th.day { font-weight: 400; color: var(--ion-color-medium); padding-bottom: 6px;
              min-width: 22px; }
@@ -88,6 +89,7 @@ interface LaneDay {
 })
 export class AdminCalendarPage implements OnInit {
   protected readonly store = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
 
   private static readonly WINDOW_DAYS = 30;
 

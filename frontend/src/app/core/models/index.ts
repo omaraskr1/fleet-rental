@@ -188,8 +188,3 @@ export const EVENT_TYPES: EventType[] = [
   'Conference',
   'Other',
 ];
-
-/** Turns "BrandedTruck" into "Branded Truck" for display. */
-export function humanize(value: string): string {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2');
-}

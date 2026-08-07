@@ -3,7 +3,6 @@ import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 
 import { AuthStore } from './core/stores/auth.store';
 import { PushService } from './core/services/push.service';
-import { TenantStore } from './core/stores/tenant.store';
 
 @Component({
   selector: 'app-root',
@@ -17,17 +16,13 @@ import { TenantStore } from './core/stores/tenant.store';
 export class App implements OnInit {
   private readonly auth = inject(AuthStore);
   private readonly push = inject(PushService);
-  private readonly tenant = inject(TenantStore);
 
   async ngOnInit(): Promise<void> {
-    // Tenant first: auth.restoreSession() calls the API, and every request needs
-    // the company code attached before it can be scoped correctly.
-    this.tenant.restore();
-
-    // Restore the session before the first guarded route resolves, otherwise a
-    // signed-in user gets bounced to login on every cold start.
-    await this.auth.restoreSession();
-
+    // Tenant, theme, locale and session are all resolved before this ever
+    // runs — provideAppInitializer in app.config.ts blocks the router's
+    // initial navigation until they are, which is what guards need. Push
+    // registration doesn't gate any route, so it stays here rather than
+    // delaying first paint for a permission prompt.
     if (this.auth.isAuthenticated()) {
       await this.push.register();
     }

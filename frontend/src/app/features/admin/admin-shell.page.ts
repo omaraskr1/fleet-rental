@@ -4,6 +4,8 @@ import { IonBadge, IonButton, IonContent } from '@ionic/angular/standalone';
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
+import { PreferencesToggleComponent } from '../../shared/preferences-toggle.component';
 
 /**
  * Admin panel shell (feature 4). A sidebar layout rather than Ionic tabs — this
@@ -11,28 +13,35 @@ import { BookingsStore } from '../../core/stores/bookings.store';
  */
 @Component({
   selector: 'app-admin-shell',
-  imports: [IonContent, IonBadge, IonButton, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [
+    IonContent, IonBadge, IonButton, RouterOutlet, RouterLink, RouterLinkActive,
+    PreferencesToggleComponent,
+  ],
   template: `
     <ion-content>
       <div class="layout">
         <aside>
           <div class="brand">
-            <strong>Fleet Rental</strong>
+            <strong>{{ locale.t('common.appName') }}</strong>
             <small>{{ auth.displayName() }}</small>
           </div>
 
           <nav>
             <a routerLink="requests" routerLinkActive="active">
-              Requests
+              {{ locale.t('admin.shell.requests') }}
               @if (bookings.pendingCount() > 0) {
                 <ion-badge color="warning">{{ bookings.pendingCount() }}</ion-badge>
               }
             </a>
-            <a routerLink="calendar" routerLinkActive="active">Fleet calendar</a>
-            <a routerLink="fleet" routerLinkActive="active">Vehicles</a>
+            <a routerLink="calendar" routerLinkActive="active">{{ locale.t('admin.shell.calendar') }}</a>
+            <a routerLink="fleet" routerLinkActive="active">{{ locale.t('admin.shell.vehicles') }}</a>
           </nav>
 
-          <ion-button fill="clear" size="small" (click)="signOut()">Sign out</ion-button>
+          <app-preferences-toggle />
+
+          <ion-button fill="clear" size="small" (click)="signOut()">
+            {{ locale.t('admin.shell.signOut') }}
+          </ion-button>
         </aside>
 
         <main>
@@ -43,7 +52,7 @@ import { BookingsStore } from '../../core/stores/bookings.store';
   `,
   styles: `
     .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100%; }
-    aside { border-right: 1px solid var(--ion-color-light-shade);
+    aside { border-inline-end: 1px solid var(--ion-color-light-shade);
             padding: 20px 12px; display: flex; flex-direction: column; gap: 20px; }
     .brand { padding: 0 8px; display: flex; flex-direction: column; }
     .brand small { color: var(--ion-color-medium); font-size: 0.8rem; }
@@ -59,7 +68,7 @@ import { BookingsStore } from '../../core/stores/bookings.store';
        should still get something usable rather than a squeezed sidebar. */
     @media (max-width: 768px) {
       .layout { grid-template-columns: 1fr; }
-      aside { border-right: none; border-bottom: 1px solid var(--ion-color-light-shade); }
+      aside { border-inline-end: none; border-block-end: 1px solid var(--ion-color-light-shade); }
       nav { flex-direction: row; flex-wrap: wrap; }
       main { padding: 16px; }
     }
@@ -68,6 +77,7 @@ import { BookingsStore } from '../../core/stores/bookings.store';
 export class AdminShellPage implements OnInit {
   protected readonly auth = inject(AuthStore);
   protected readonly bookings = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   ngOnInit(): void {

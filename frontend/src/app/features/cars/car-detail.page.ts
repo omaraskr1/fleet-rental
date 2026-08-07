@@ -8,7 +8,7 @@ import {
 
 import { AvailabilityCalendarComponent } from '../../shared/availability-calendar.component';
 import { CarsStore } from '../../core/stores/cars.store';
-import { humanize } from '../../core/models';
+import { LocaleStore } from '../../core/stores/locale.store';
 
 /** Feature 2 — car detail with its availability calendar. */
 @Component({
@@ -22,7 +22,7 @@ import { humanize } from '../../core/models';
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/cars" /></ion-buttons>
-        <ion-title>{{ car()?.name ?? 'Vehicle' }}</ion-title>
+        <ion-title>{{ car()?.name ?? locale.t('cars.title') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -37,12 +37,12 @@ import { humanize } from '../../core/models';
             <div class="row">
               <h1>{{ detail.name }}</h1>
               <ion-badge [color]="detail.status === 'Active' ? 'success' : 'medium'">
-                {{ label(detail.status) }}
+                {{ statusLabel(detail.status) }}
               </ion-badge>
             </div>
             <p class="meta">
-              {{ label(detail.category) }} · {{ detail.seats }} seats ·
-              <strong>{{ detail.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}/day</strong>
+              {{ categoryLabel(detail.category) }} · {{ locale.t('cars.seats', { count: detail.seats }) }} ·
+              <strong>{{ detail.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ locale.t('cars.perDay') }}</strong>
             </p>
             @if (detail.description) {
               <p>{{ detail.description }}</p>
@@ -52,7 +52,7 @@ import { humanize } from '../../core/models';
 
         <ion-card>
           <ion-card-content>
-            <h2>Availability</h2>
+            <h2>{{ locale.t('cars.availability') }}</h2>
             <app-availability-calendar
               [bookedDates]="store.bookedDateSet()"
               [pendingDates]="store.pendingDateSet()" />
@@ -69,7 +69,7 @@ import { humanize } from '../../core/models';
           expand="block"
           [disabled]="!canBook()"
           (click)="book()">
-          {{ canBook() ? 'Request this vehicle' : 'Not available for booking' }}
+          {{ canBook() ? locale.t('cars.requestVehicle') : locale.t('cars.notAvailable') }}
         </ion-button>
       </ion-toolbar>
     </ion-footer>
@@ -89,6 +89,7 @@ export class CarDetailPage implements OnInit {
   readonly id = input.required<string>();
 
   protected readonly store = inject(CarsStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   protected readonly car = this.store.selected;
@@ -100,8 +101,21 @@ export class CarDetailPage implements OnInit {
     void this.store.loadAvailability(this.id());
   }
 
-  protected label(value: string): string {
-    return humanize(value);
+  protected categoryLabel(value: string): string {
+    return this.locale.t(`enums.category.${value}`);
+  }
+
+  protected statusLabel(value: string): string {
+    switch (value) {
+      case 'Active':
+        return this.locale.t('cars.active');
+      case 'Maintenance':
+        return this.locale.t('cars.maintenance');
+      case 'Retired':
+        return this.locale.t('cars.retired');
+      default:
+        return value;
+    }
   }
 
   protected book(): void {

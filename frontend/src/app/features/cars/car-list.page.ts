@@ -22,7 +22,8 @@ import { addIcons } from 'ionicons';
 import { carSportOutline, peopleOutline } from 'ionicons/icons';
 
 import { CarsStore } from '../../core/stores/cars.store';
-import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
+import { LocaleStore } from '../../core/stores/locale.store';
+import { CAR_CATEGORIES, type CarCategory } from '../../core/models';
 
 /** Feature 1 — the fleet browse screen. */
 @Component({
@@ -35,14 +36,14 @@ import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
   template: `
     <ion-header>
       <ion-toolbar>
-        <ion-title>Our Fleet</ion-title>
+        <ion-title>{{ locale.t('cars.title') }}</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="filters">
           <ion-chip
             [outline]="store.categoryFilter() !== null"
             (click)="filter(null)">
-            <ion-label>All</ion-label>
+            <ion-label>{{ locale.t('cars.filterAll') }}</ion-label>
           </ion-chip>
           @for (category of categories; track category) {
             <ion-chip
@@ -77,7 +78,7 @@ import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
       } @else if (store.isEmpty()) {
         <div class="state">
           <ion-icon name="car-sport-outline" />
-          <p>No vehicles in this category.</p>
+          <p>{{ locale.t('cars.noResults') }}</p>
         </div>
       } @else {
         @for (car of store.visibleCars(); track car.id) {
@@ -89,7 +90,7 @@ import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
               <div class="row">
                 <h2>{{ car.name }}</h2>
                 <ion-badge [color]="car.availableToday ? 'success' : 'medium'">
-                  {{ car.availableToday ? 'Available' : 'Booked today' }}
+                  {{ car.availableToday ? locale.t('cars.available') : locale.t('cars.bookedToday') }}
                 </ion-badge>
               </div>
               <div class="meta">
@@ -98,7 +99,7 @@ import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
                 <ion-icon name="people-outline" />
                 <span>{{ car.seats }}</span>
                 <span>·</span>
-                <strong>{{ car.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}/day</strong>
+                <strong>{{ car.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ locale.t('cars.perDay') }}</strong>
               </div>
             </ion-card-content>
           </ion-card>
@@ -125,6 +126,7 @@ import { CAR_CATEGORIES, humanize, type CarCategory } from '../../core/models';
 })
 export class CarListPage implements OnInit {
   protected readonly store = inject(CarsStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   protected readonly categories = CAR_CATEGORIES;
@@ -139,7 +141,7 @@ export class CarListPage implements OnInit {
   }
 
   protected label(value: string): string {
-    return humanize(value);
+    return this.locale.t(`enums.category.${value}`);
   }
 
   protected filter(category: CarCategory | null): void {

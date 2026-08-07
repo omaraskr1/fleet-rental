@@ -23,7 +23,8 @@ and this will take us to module about mickanical of car and logs of it and insig
 
 - i want the theme to be light and dark
 
-password :ChangeMe!2026
-
+---------------------
 
 - i want module for the admins of cars to track there inputs of money and oputs to see the profite of them
+
+-the cars has gps and i want to make the owners of cars track them using gps to see where it is

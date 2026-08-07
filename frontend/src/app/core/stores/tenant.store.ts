@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { LocaleStore } from './locale.store';
 
 export interface TenantSummary {
   code: string;
@@ -21,6 +22,7 @@ const TENANT_KEY = 'fleet_rental_tenant';
 @Injectable({ providedIn: 'root' })
 export class TenantStore {
   private readonly http = inject(HttpClient);
+  private readonly locale = inject(LocaleStore);
 
   private readonly _tenant = signal<TenantSummary | null>(null);
   private readonly _loading = signal(false);
@@ -73,7 +75,7 @@ export class TenantStore {
       localStorage.setItem(TENANT_KEY, JSON.stringify(tenant));
       return true;
     } catch {
-      this._error.set(`We couldn't find a company with the code "${trimmed}".`);
+      this._error.set(this.locale.t('tenant.notFound', { code: trimmed }));
       return false;
     } finally {
       this._loading.set(false);
