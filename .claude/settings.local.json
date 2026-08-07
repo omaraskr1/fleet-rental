@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(dotnet --version)",
+      "PowerShell($paths = @\\(\"$env:ProgramFiles\\\\nodejs\\\\node.exe\",\"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\dotnet\\\\dotnet.exe\",\"$env:LOCALAPPDATA\\\\Programs\\\\nodejs\\\\node.exe\"\\); foreach \\($p in $paths\\) { \"{0} -> {1}\" -f $p, \\(Test-Path $p\\) })",
+      "PowerShell(& \"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\" --list-sdks; \"--- runtimes ---\"; & \"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\" --list-runtimes | Select-Object -First 5)",
+      "PowerShell(try { \\(Get-Command winget -ErrorAction Stop\\).Source } catch { \"winget: NOT FOUND\" })",
+      "PowerShell(winget search Microsoft.DotNet.SDK --disable-interactivity)",
+      "PowerShell(winget search OpenJS.NodeJS --disable-interactivity)",
+      "PowerShell(winget search Microsoft.DotNet.SDK --source winget --disable-interactivity)",
+      "PowerShell(winget search OpenJS.NodeJS --source winget --disable-interactivity)",
+      "PowerShell(winget install --id OpenJS.NodeJS.LTS --source winget --silent --accept-package-agreements --disable-interactivity)",
+      "PowerShell(winget install --id Microsoft.DotNet.SDK.10 --source winget --silent --accept-package-agreements --disable-interactivity)"
+    ]
+  }
+}

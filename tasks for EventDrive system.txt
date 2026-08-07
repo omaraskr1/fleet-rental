@@ -1,0 +1,10 @@
+tasks for EventDrive system
+-git environment 
+
+-try to make dev and test and uat and prod enviroments
+
+-unit tests for all the system 
+and integrations test
+and any tests that always make me sure when i change that the system hasnot bugs and help for gab that i don't has tester
+
+-add machine learning and datamining that help the user in analysis and dashboard and monitor his system

@@ -1,0 +1,84 @@
+# ---------- .NET ----------
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+artifacts/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.pdb
+
+# EF Core migration bundles
+*.efbundle
+*.efbundle.exe
+
+# ---------- Secrets ----------
+# Local overrides go here; never committed. See README for required keys.
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.p12
+.env
+.env.*
+!.env.example
+secrets.json
+
+# ---------- Node / Angular / Ionic ----------
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/
+.sass-cache/
+*.log
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Ionic
+.ionic/
+www/
+
+# ---------- Capacitor native ----------
+# The ios/ and android/ projects ARE committed so native config is versioned,
+# but their build output and fetched dependencies are not.
+ios/App/Pods/
+ios/App/build/
+ios/App/output/
+ios/App/App/public/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/local.properties
+android/.idea/
+*.keystore
+!debug.keystore
+*.jks
+
+# ---------- IDE / OS ----------
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ---------- Test / coverage ----------
+TestResults/
+coverage/
+*.coverage
+*.trx
