@@ -90,7 +90,7 @@ public class CarTests
 
         car.AddPhoto("https://example.com/3.jpg", isPrimary: true);
 
-        Assert.Single(car.Photos.Where(p => p.IsPrimary));
+        Assert.Single(car.Photos, p => p.IsPrimary);
         Assert.Equal("https://example.com/3.jpg", car.PrimaryPhoto!.Url);
     }
 
@@ -144,5 +144,80 @@ public class CarTests
     {
         var range = new DateRange(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 5));
         Assert.True(NewCar().IsAvailableFor(range));
+    }
+
+    // ---------- Maintenance ----------
+
+    [Fact]
+    public void A_new_car_tracks_no_odometer_or_interval_by_default()
+    {
+        var car = NewCar();
+
+        // Null, not zero — a car nobody has ever entered a reading for must not
+        // be indistinguishable from one that is at 0 km.
+        Assert.Null(car.CurrentOdometerKm);
+        Assert.Null(car.ServiceIntervalKm);
+    }
+
+    [Fact]
+    public void UpdateOdometer_records_the_reading()
+    {
+        var car = NewCar();
+        car.UpdateOdometer(45_000);
+        Assert.Equal(45_000, car.CurrentOdometerKm);
+    }
+
+    [Fact]
+    public void UpdateOdometer_rejects_a_negative_reading()
+    {
+        Assert.Throws<DomainException>(() => NewCar().UpdateOdometer(-1));
+    }
+
+    [Fact]
+    public void UpdateOdometer_rejects_a_reading_lower_than_the_one_on_file()
+    {
+        var car = NewCar();
+        car.UpdateOdometer(45_000);
+
+        // Almost always a typo, and silently accepting it would corrupt the
+        // "km since last service" calculation with a value that moves backwards.
+        var ex = Assert.Throws<DomainException>(() => car.UpdateOdometer(44_000));
+        Assert.Contains("lower than the current one on file", ex.Message);
+    }
+
+    [Fact]
+    public void UpdateOdometer_allows_the_same_reading_twice()
+    {
+        var car = NewCar();
+        car.UpdateOdometer(45_000);
+        car.UpdateOdometer(45_000);
+        Assert.Equal(45_000, car.CurrentOdometerKm);
+    }
+
+    [Fact]
+    public void SetServiceInterval_records_the_distance()
+    {
+        var car = NewCar();
+        car.SetServiceInterval(10_000);
+        Assert.Equal(10_000, car.ServiceIntervalKm);
+    }
+
+    [Fact]
+    public void SetServiceInterval_null_turns_tracking_off()
+    {
+        var car = NewCar();
+        car.SetServiceInterval(10_000);
+
+        car.SetServiceInterval(null);
+
+        Assert.Null(car.ServiceIntervalKm);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void SetServiceInterval_rejects_a_non_positive_value(int km)
+    {
+        Assert.Throws<DomainException>(() => NewCar().SetServiceInterval(km));
     }
 }

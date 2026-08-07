@@ -84,6 +84,60 @@ public class ApiClient(HttpClient http)
     public async Task<T?> GetAsync<T>(string url) =>
         await http.GetFromJsonAsync<T>(url, Json);
 
+    // ---------- Maintenance ----------
+
+    public Task<HttpResponseMessage> LogServiceAsync(
+        Guid carId,
+        DateOnly performedAt,
+        string description,
+        int? odometerKm,
+        decimal cost,
+        string? performedBy = null) =>
+        http.PostAsJsonAsync($"/api/cars/{carId}/service-records", new
+        {
+            performedAt = performedAt.ToString("yyyy-MM-dd"),
+            description,
+            odometerKm,
+            cost,
+            performedBy,
+        }, Json);
+
+    public Task<HttpResponseMessage> UpdateOdometerAsync(Guid carId, int km) =>
+        http.PutAsJsonAsync($"/api/cars/{carId}/odometer", new { km }, Json);
+
+    public Task<HttpResponseMessage> SetServiceIntervalAsync(Guid carId, int? km) =>
+        http.PutAsJsonAsync($"/api/cars/{carId}/service-interval", new { km }, Json);
+
+    public Task<HttpResponseMessage> ReportIssueAsync(Guid carId, string description, string severity) =>
+        http.PostAsJsonAsync($"/api/cars/{carId}/issues", new { description, severity }, Json);
+
+    public async Task<Guid> ReportIssueAndGetIdAsync(Guid carId, string description, string severity)
+    {
+        var response = await ReportIssueAsync(carId, description, severity);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<VehicleIssueResult>(Json))!.Id;
+    }
+
+    public Task<HttpResponseMessage> ResolveIssueAsync(Guid issueId, string? resolutionNotes = null) =>
+        http.PostAsJsonAsync($"/api/issues/{issueId}/resolve", new { resolutionNotes }, Json);
+
+    public Task<HttpResponseMessage> StartIssueProgressAsync(Guid issueId) =>
+        http.PostAsJsonAsync($"/api/issues/{issueId}/start-progress", new { }, Json);
+
+    public Task<HttpResponseMessage> ReopenIssueAsync(Guid issueId) =>
+        http.PostAsJsonAsync($"/api/issues/{issueId}/reopen", new { }, Json);
+
+    public record VehicleIssueResult(
+        Guid Id, Guid CarId, string CarName, string ReportedByName,
+        string Description, string Severity, string Status);
+
+    public record ServiceRecordResult(Guid Id, Guid CarId, string PerformedAt, string Description, int? OdometerKm, decimal Cost);
+
+    public record MaintenanceSummaryResult(
+        Guid CarId, string CarName, int? CurrentOdometerKm, int? ServiceIntervalKm,
+        string? LastServiceAt, int? KmSinceLastService, bool IsServiceDue,
+        int OpenIssueCount, bool HasBlockingIssue);
+
     public record AuthResult(string AccessToken, DateTimeOffset ExpiresAt, UserResult User);
 
     public record UserResult(Guid Id, string Email, string FullName, string Role);

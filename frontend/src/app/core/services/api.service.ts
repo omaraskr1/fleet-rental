@@ -11,12 +11,18 @@ import type {
   CarAvailability,
   CarDetail,
   CarListItem,
+  CarMaintenanceSummary,
   CreateBookingRequest,
   CreateCarRequest,
   DevicePlatform,
   FleetAvailability,
   IsoDate,
+  IssueStatus,
+  LogServiceRequest,
+  ReportIssueRequest,
+  ServiceRecord,
   UpdateCarRequest,
+  VehicleIssue,
   AppUser,
 } from '../models';
 
@@ -157,5 +163,66 @@ export class ApiService {
 
   unregisterDevice(deviceId: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.base}/auth/devices/${deviceId}`));
+  }
+
+  // ---------- Maintenance ----------
+
+  getMaintenanceSummary(carId: string): Promise<CarMaintenanceSummary> {
+    return firstValueFrom(
+      this.http.get<CarMaintenanceSummary>(`${this.base}/cars/${carId}/maintenance`),
+    );
+  }
+
+  getServiceHistory(carId: string): Promise<ServiceRecord[]> {
+    return firstValueFrom(
+      this.http.get<ServiceRecord[]>(`${this.base}/cars/${carId}/service-records`),
+    );
+  }
+
+  logService(carId: string, request: LogServiceRequest): Promise<ServiceRecord> {
+    return firstValueFrom(
+      this.http.post<ServiceRecord>(`${this.base}/cars/${carId}/service-records`, request),
+    );
+  }
+
+  updateOdometer(carId: string, km: number): Promise<void> {
+    return firstValueFrom(this.http.put<void>(`${this.base}/cars/${carId}/odometer`, { km }));
+  }
+
+  setServiceInterval(carId: string, km: number | null): Promise<void> {
+    return firstValueFrom(
+      this.http.put<void>(`${this.base}/cars/${carId}/service-interval`, { km }),
+    );
+  }
+
+  reportIssue(carId: string, request: ReportIssueRequest): Promise<VehicleIssue> {
+    return firstValueFrom(
+      this.http.post<VehicleIssue>(`${this.base}/cars/${carId}/issues`, request),
+    );
+  }
+
+  getIssues(carId?: string, status?: IssueStatus): Promise<VehicleIssue[]> {
+    let params = new HttpParams();
+    if (carId) params = params.set('carId', carId);
+    if (status) params = params.set('status', status);
+    return firstValueFrom(this.http.get<VehicleIssue[]>(`${this.base}/issues`, { params }));
+  }
+
+  startIssueProgress(issueId: string): Promise<VehicleIssue> {
+    return firstValueFrom(
+      this.http.post<VehicleIssue>(`${this.base}/issues/${issueId}/start-progress`, {}),
+    );
+  }
+
+  resolveIssue(issueId: string, resolutionNotes?: string): Promise<VehicleIssue> {
+    return firstValueFrom(
+      this.http.post<VehicleIssue>(`${this.base}/issues/${issueId}/resolve`, { resolutionNotes }),
+    );
+  }
+
+  reopenIssue(issueId: string): Promise<VehicleIssue> {
+    return firstValueFrom(
+      this.http.post<VehicleIssue>(`${this.base}/issues/${issueId}/reopen`, {}),
+    );
   }
 }

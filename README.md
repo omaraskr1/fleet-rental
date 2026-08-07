@@ -29,6 +29,34 @@ All six MVP features are implemented and verified end to end.
 
 ---
 
+## Vehicle maintenance
+
+Owner-facing mechanical tracking, reachable from the fleet table's "Maintenance"
+link on each car, plus a fleet-wide open-issues dashboard.
+
+- **Service history** — `ServiceRecord` entries (date, description, odometer,
+  cost, workshop). Logging one with a higher odometer reading than the car has
+  on file updates the car's current odometer automatically, since a service
+  visit is the natural moment that reading is taken.
+- **Service-due calculation** — a car opts in by having both a current
+  odometer reading and a service interval set; the summary compares distance
+  since the last odometer-bearing service record against that interval. A car
+  with neither tracked is never flagged due — silence is not the same as "up
+  to date."
+- **Issue reporting** — `VehicleIssue` with severity (Low/Medium/High/Critical)
+  and a lifecycle (Open → InProgress → Resolved, reopenable). A Critical
+  unresolved issue surfaces as a red badge in the admin sidebar, live across
+  every open tab via the shared `MaintenanceStore` — resolving it clears the
+  badge without a page reload.
+- **Admin-only end to end.** Clients booking a car never see any of this; every
+  endpoint in `MaintenanceController` requires the Admin role.
+
+Both new entities derive from `TenantEntity` like everything else, so tenant
+isolation and the global query filter applied nothing extra — see
+`MaintenanceTests.cs` for the cross-tenant checks.
+
+---
+
 ## Multi-tenancy
 
 The platform serves multiple rental businesses from one shared database. Each is

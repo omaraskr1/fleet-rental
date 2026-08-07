@@ -43,6 +43,20 @@ public class Car : TenantEntity
 
     public CarStatus Status { get; private set; } = CarStatus.Active;
 
+    /// <summary>
+    /// Most recent known reading. Nullable because odometer tracking is opt-in —
+    /// entered by an admin, not read from telematics hardware this system does
+    /// not have — and a car may simply never have had one recorded.
+    /// </summary>
+    public int? CurrentOdometerKm { get; private set; }
+
+    /// <summary>
+    /// Distance between services, if the owner tracks one for this car. Null
+    /// means "not tracked", not "zero" — a car with no interval set is never
+    /// flagged as due, rather than being flagged as permanently overdue.
+    /// </summary>
+    public int? ServiceIntervalKm { get; private set; }
+
     public IReadOnlyCollection<CarPhoto> Photos => _photos.AsReadOnly();
 
     public IReadOnlyCollection<Booking> Bookings => _bookings.AsReadOnly();
@@ -120,6 +134,42 @@ public class Car : TenantEntity
     public void ChangeStatus(CarStatus status)
     {
         Status = status;
+        Touch();
+    }
+
+    /// <summary>
+    /// Records a new odometer reading — typically entered alongside a service,
+    /// but also usable on its own so "due" can be judged between services.
+    /// </summary>
+    public void UpdateOdometer(int km)
+    {
+        if (km < 0)
+        {
+            throw new DomainException("Odometer reading cannot be negative.");
+        }
+
+        // A reading lower than one already on file is almost always a typo (or
+        // an odometer swap after an engine replacement, rare enough that an
+        // admin correcting it deliberately can go through support rather than
+        // this silently accepting a rollback that breaks the due-date math).
+        if (CurrentOdometerKm is { } current && km < current)
+        {
+            throw new DomainException(
+                $"New odometer reading ({km} km) is lower than the current one on file ({current} km).");
+        }
+
+        CurrentOdometerKm = km;
+        Touch();
+    }
+
+    public void SetServiceInterval(int? km)
+    {
+        if (km is < 1)
+        {
+            throw new DomainException("Service interval must be at least 1 km.");
+        }
+
+        ServiceIntervalKm = km;
         Touch();
     }
 

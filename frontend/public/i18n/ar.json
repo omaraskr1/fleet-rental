@@ -171,7 +171,54 @@
       "status": "الحالة",
       "today": "اليوم",
       "free": "متاحة",
-      "booked": "محجوزة"
+      "booked": "محجوزة",
+      "maintenanceLink": "الصيانة"
+    },
+    "maintenance": {
+      "title": "الصيانة",
+      "currentOdometer": "قراءة العداد الحالية",
+      "serviceInterval": "الفاصل الزمني للصيانة",
+      "notTracked": "غير متتبَّع",
+      "lastService": "آخر صيانة",
+      "never": "لا يوجد",
+      "kmSinceService": "{{km}} كم منذ آخر صيانة",
+      "due": "الصيانة مستحقة",
+      "notDue": "محدَّثة",
+      "km": "كم",
+      "updateOdometer": "تحديث العداد",
+      "updateInterval": "تعيين الفاصل الزمني",
+      "save": "حفظ",
+      "serviceHistory": "سجل الصيانة",
+      "logService": "تسجيل صيانة",
+      "date": "التاريخ",
+      "description": "الوصف",
+      "descriptionPlaceholder": "تغيير الزيت والفلتر",
+      "odometerOptional": "العداد (اختياري)",
+      "cost": "التكلفة",
+      "performedByOptional": "تم بواسطة (اختياري)",
+      "performedByPlaceholder": "مركز الفطيم للخدمة",
+      "submitService": "تسجيل الصيانة",
+      "noHistory": "لا يوجد سجل صيانة بعد.",
+      "issuesForCar": "الأعطال",
+      "reportIssue": "الإبلاغ عن عطل",
+      "issueDescriptionPlaceholder": "التكييف لا يبرّد",
+      "severity": "الخطورة",
+      "submitIssue": "الإبلاغ عن العطل",
+      "noIssues": "لا توجد أعطال مسجَّلة."
+    },
+    "issues": {
+      "title": "أعطال المركبات",
+      "filterAll": "الكل",
+      "filterOpen": "مفتوح",
+      "filterInProgress": "قيد المعالجة",
+      "filterResolved": "تم الحل",
+      "vehicle": "المركبة",
+      "reportedBy": "المُبلِّغ",
+      "startProgress": "بدء المعالجة",
+      "resolve": "حل العطل",
+      "reopen": "إعادة الفتح",
+      "resolutionNotesPlaceholder": "ما الذي تم فعله لإصلاحه (اختياري)",
+      "empty": "لا توجد أعطال مطابقة لهذا الفلتر."
     }
   },
   "enums": {
@@ -193,6 +240,17 @@
       "RoadShow": "جولة ترويجية",
       "Conference": "مؤتمر",
       "Other": "أخرى"
+    },
+    "issueSeverity": {
+      "Low": "منخفضة",
+      "Medium": "متوسطة",
+      "High": "عالية",
+      "Critical": "حرجة"
+    },
+    "issueStatus": {
+      "Open": "مفتوح",
+      "InProgress": "قيد المعالجة",
+      "Resolved": "تم الحل"
     }
   }
 }

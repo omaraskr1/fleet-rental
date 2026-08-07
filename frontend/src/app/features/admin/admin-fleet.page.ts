@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
-import { IonBadge, IonNote, IonSpinner } from '@ionic/angular/standalone';
+import { Router } from '@angular/router';
+import { IonBadge, IonButton, IonNote, IonSpinner } from '@ionic/angular/standalone';
 
 import { CarsStore } from '../../core/stores/cars.store';
 import { LocaleStore } from '../../core/stores/locale.store';
@@ -12,7 +13,7 @@ import { LocaleStore } from '../../core/stores/locale.store';
  */
 @Component({
   selector: 'app-admin-fleet',
-  imports: [IonBadge, IonSpinner, IonNote, CurrencyPipe],
+  imports: [IonBadge, IonButton, IonSpinner, IonNote, CurrencyPipe],
   template: `
     <h1>{{ locale.t('admin.fleet.title') }}</h1>
     <ion-note>{{ locale.t('admin.fleet.freeToday', { free: store.availableCount(), total: store.cars().length }) }}</ion-note>
@@ -30,6 +31,7 @@ import { LocaleStore } from '../../core/stores/locale.store';
               <th>{{ locale.t('admin.fleet.dailyRate') }}</th>
               <th>{{ locale.t('admin.fleet.status') }}</th>
               <th>{{ locale.t('admin.fleet.today') }}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +50,11 @@ import { LocaleStore } from '../../core/stores/locale.store';
                   <ion-badge [color]="car.availableToday ? 'success' : 'warning'">
                     {{ car.availableToday ? locale.t('admin.fleet.free') : locale.t('admin.fleet.booked') }}
                   </ion-badge>
+                </td>
+                <td>
+                  <ion-button size="small" fill="clear" (click)="openMaintenance(car.id)">
+                    {{ locale.t('admin.fleet.maintenanceLink') }}
+                  </ion-button>
                 </td>
               </tr>
             }
@@ -71,6 +78,7 @@ import { LocaleStore } from '../../core/stores/locale.store';
 export class AdminFleetPage implements OnInit {
   protected readonly store = inject(CarsStore);
   protected readonly locale = inject(LocaleStore);
+  private readonly router = inject(Router);
 
   ngOnInit(): void {
     void this.store.loadCars();
@@ -91,5 +99,9 @@ export class AdminFleetPage implements OnInit {
       default:
         return value;
     }
+  }
+
+  protected openMaintenance(carId: string): void {
+    void this.router.navigate(['/admin/fleet', carId, 'maintenance']);
   }
 }

@@ -30,6 +30,10 @@ public interface IFleetRentalDbContext
 
     DbSet<DeviceToken> DeviceTokens { get; }
 
+    DbSet<ServiceRecord> ServiceRecords { get; }
+
+    DbSet<VehicleIssue> VehicleIssues { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

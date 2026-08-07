@@ -188,3 +188,59 @@ export const EVENT_TYPES: EventType[] = [
   'Conference',
   'Other',
 ];
+
+// ---------- Maintenance ----------
+
+export type IssueSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type IssueStatus = 'Open' | 'InProgress' | 'Resolved';
+
+export const ISSUE_SEVERITIES: IssueSeverity[] = ['Low', 'Medium', 'High', 'Critical'];
+
+export interface ServiceRecord {
+  id: string;
+  carId: string;
+  performedAt: IsoDate;
+  description: string;
+  odometerKm: number | null;
+  cost: number;
+  performedBy: string | null;
+}
+
+export interface LogServiceRequest {
+  performedAt: IsoDate;
+  description: string;
+  odometerKm: number | null;
+  cost: number;
+  performedBy?: string | null;
+}
+
+export interface VehicleIssue {
+  id: string;
+  carId: string;
+  carName: string;
+  reportedByName: string;
+  description: string;
+  severity: IssueSeverity;
+  status: IssueStatus;
+  reportedAt: string;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+}
+
+export interface ReportIssueRequest {
+  description: string;
+  severity: IssueSeverity;
+}
+
+export interface CarMaintenanceSummary {
+  carId: string;
+  carName: string;
+  currentOdometerKm: number | null;
+  serviceIntervalKm: number | null;
+  lastServiceAt: IsoDate | null;
+  kmSinceLastService: number | null;
+  isServiceDue: boolean;
+  openIssueCount: number;
+  hasBlockingIssue: boolean;
+}

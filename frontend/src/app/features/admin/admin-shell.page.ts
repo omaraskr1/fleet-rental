@@ -4,6 +4,7 @@ import { IonBadge, IonButton, IonContent } from '@ionic/angular/standalone';
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { MaintenanceStore } from '../../core/stores/maintenance.store';
 import { LocaleStore } from '../../core/stores/locale.store';
 import { PreferencesToggleComponent } from '../../shared/preferences-toggle.component';
 
@@ -35,6 +36,14 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
             </a>
             <a routerLink="calendar" routerLinkActive="active">{{ locale.t('admin.shell.calendar') }}</a>
             <a routerLink="fleet" routerLinkActive="active">{{ locale.t('admin.shell.vehicles') }}</a>
+            <a routerLink="issues" routerLinkActive="active">
+              {{ locale.t('admin.issues.title') }}
+              @if (maintenance.openIssueCount() > 0) {
+                <ion-badge [color]="maintenance.hasCriticalIssue() ? 'danger' : 'warning'">
+                  {{ maintenance.openIssueCount() }}
+                </ion-badge>
+              }
+            </a>
           </nav>
 
           <app-preferences-toggle />
@@ -77,13 +86,15 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
 export class AdminShellPage implements OnInit {
   protected readonly auth = inject(AuthStore);
   protected readonly bookings = inject(BookingsStore);
+  protected readonly maintenance = inject(MaintenanceStore);
   protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   ngOnInit(): void {
-    // Loaded here so the sidebar badge is populated on every admin route, not
-    // only after the requests page has been visited.
+    // Loaded here so the sidebar badges are populated on every admin route, not
+    // only after their own page has been visited.
     void this.bookings.loadAllBookings();
+    void this.maintenance.loadIssues();
   }
 
   protected signOut(): void {

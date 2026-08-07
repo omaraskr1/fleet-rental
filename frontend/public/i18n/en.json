@@ -171,7 +171,54 @@
       "status": "Status",
       "today": "Today",
       "free": "Free",
-      "booked": "Booked"
+      "booked": "Booked",
+      "maintenanceLink": "Maintenance"
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "currentOdometer": "Current odometer",
+      "serviceInterval": "Service interval",
+      "notTracked": "Not tracked",
+      "lastService": "Last service",
+      "never": "Never",
+      "kmSinceService": "{{km}} km since last service",
+      "due": "Service due",
+      "notDue": "Up to date",
+      "km": "km",
+      "updateOdometer": "Update odometer",
+      "updateInterval": "Set interval",
+      "save": "Save",
+      "serviceHistory": "Service history",
+      "logService": "Log a service",
+      "date": "Date",
+      "description": "Description",
+      "descriptionPlaceholder": "Oil and filter change",
+      "odometerOptional": "Odometer (optional)",
+      "cost": "Cost",
+      "performedByOptional": "Performed by (optional)",
+      "performedByPlaceholder": "Al Futtaim Service Center",
+      "submitService": "Log service",
+      "noHistory": "No service history yet.",
+      "issuesForCar": "Issues",
+      "reportIssue": "Report an issue",
+      "issueDescriptionPlaceholder": "AC not cooling",
+      "severity": "Severity",
+      "submitIssue": "Report issue",
+      "noIssues": "No issues reported."
+    },
+    "issues": {
+      "title": "Vehicle issues",
+      "filterAll": "All",
+      "filterOpen": "Open",
+      "filterInProgress": "In progress",
+      "filterResolved": "Resolved",
+      "vehicle": "Vehicle",
+      "reportedBy": "Reported by",
+      "startProgress": "Start progress",
+      "resolve": "Resolve",
+      "reopen": "Reopen",
+      "resolutionNotesPlaceholder": "What was done to fix it (optional)",
+      "empty": "No issues match this filter."
     }
   },
   "enums": {
@@ -193,6 +240,17 @@
       "RoadShow": "Road Show",
       "Conference": "Conference",
       "Other": "Other"
+    },
+    "issueSeverity": {
+      "Low": "Low",
+      "Medium": "Medium",
+      "High": "High",
+      "Critical": "Critical"
+    },
+    "issueStatus": {
+      "Open": "Open",
+      "InProgress": "In progress",
+      "Resolved": "Resolved"
     }
   }
 }

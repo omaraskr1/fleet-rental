@@ -107,6 +107,16 @@ export const routes: Routes = [
         path: 'fleet',
         loadComponent: () => import('./features/admin/admin-fleet.page').then((m) => m.AdminFleetPage),
       },
+      {
+        path: 'fleet/:carId/maintenance',
+        loadComponent: () =>
+          import('./features/admin/admin-car-maintenance.page').then((m) => m.AdminCarMaintenancePage),
+      },
+      {
+        path: 'issues',
+        loadComponent: () =>
+          import('./features/admin/admin-issues.page').then((m) => m.AdminIssuesPage),
+      },
     ],
   },
 

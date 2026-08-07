@@ -47,6 +47,10 @@ public class FleetRentalDbContext(
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
+
+    public DbSet<VehicleIssue> VehicleIssues => Set<VehicleIssue>();
+
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

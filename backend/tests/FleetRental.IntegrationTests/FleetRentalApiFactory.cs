@@ -97,6 +97,8 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             DELETE FROM Events;
             DELETE FROM DeviceTokens;
             DELETE FROM CarPhotos;
+            DELETE FROM ServiceRecords;
+            DELETE FROM VehicleIssues;
             DELETE FROM Cars;
             DELETE FROM Users;
             DELETE FROM Tenants;
