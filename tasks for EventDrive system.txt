@@ -17,3 +17,13 @@ and any tests that always make me sure when i change that the system hasnot bugs
 one for user to booking 
 one for the owners of cars to check booking on it and insights and if there is any issue in car or mechanical should do
 and this will take us to module about mickanical of car and logs of it and insights on it and service time 
+
+
+- localization serive (arabic-english)
+
+- i want the theme to be light and dark
+
+password :ChangeMe!2026
+
+
+- i want module for the admins of cars to track there inputs of money and oputs to see the profite of them

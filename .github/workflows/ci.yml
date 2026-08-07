@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch makes an in-flight run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (unit + integration)
+    runs-on: ubuntu-latest
+
+    services:
+      # Integration tests run against real SQL Server on purpose. The unique index
+      # that makes double-booking impossible does not exist in EF InMemory, so a
+      # suite using it would pass while the guarantee was broken.
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD || 'Local!TestPassword123' }}
+          MSSQL_PID: Express
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore backend/FleetRental.slnx
+
+      - name: Build
+        run: dotnet build backend/FleetRental.slnx --no-restore --configuration Release
+
+      - name: Unit tests
+        run: >-
+          dotnet test backend/tests/FleetRental.UnitTests
+          --no-build --configuration Release
+          --logger "trx;LogFileName=unit.trx"
+          --results-directory TestResults
+
+      - name: Integration tests
+        env:
+          FLEETRENTAL_TEST_CONNECTION: >-
+            Server=localhost,1433;Database=FleetRental_Test;User Id=sa;Password=${{ secrets.MSSQL_SA_PASSWORD || 'Local!TestPassword123' }};TrustServerCertificate=True
+        run: >-
+          dotnet test backend/tests/FleetRental.IntegrationTests
+          --no-build --configuration Release
+          --logger "trx;LogFileName=integration.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/
+          retention-days: 14
+
+  frontend:
+    name: Frontend (build + tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+        continue-on-error: true # TODO: drop once task 15 lands frontend tests
+
+      - name: Production build
+        working-directory: frontend
+        run: npm run build
+
+      # A green build that quietly stopped shipping the app would be worse than
+      # a red one, so assert the bundle actually exists.
+      - name: Verify bundle was produced
+        working-directory: frontend
+        run: test -f dist/frontend/browser/index.html
