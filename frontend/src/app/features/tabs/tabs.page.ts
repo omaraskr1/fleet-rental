@@ -13,6 +13,7 @@ import { calendarOutline, carSportOutline, personOutline } from 'ionicons/icons'
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 
 @Component({
   selector: 'app-tabs',
@@ -24,12 +25,12 @@ import { BookingsStore } from '../../core/stores/bookings.store';
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="cars" href="/tabs/cars">
           <ion-icon name="car-sport-outline" />
-          <ion-label>Fleet</ion-label>
+          <ion-label>{{ locale.t('tabs.fleet') }}</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="bookings" href="/tabs/bookings">
           <ion-icon name="calendar-outline" />
-          <ion-label>Bookings</ion-label>
+          <ion-label>{{ locale.t('tabs.bookings') }}</ion-label>
           @if (pendingCount() > 0) {
             <ion-badge color="warning">{{ pendingCount() }}</ion-badge>
           }
@@ -37,7 +38,7 @@ import { BookingsStore } from '../../core/stores/bookings.store';
 
         <ion-tab-button tab="profile" href="/tabs/profile">
           <ion-icon name="person-outline" />
-          <ion-label>{{ isAuthenticated() ? 'Profile' : 'Sign in' }}</ion-label>
+          <ion-label>{{ isAuthenticated() ? locale.t('tabs.profile') : locale.t('tabs.signIn') }}</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
@@ -46,6 +47,7 @@ import { BookingsStore } from '../../core/stores/bookings.store';
 export class TabsPage {
   private readonly auth = inject(AuthStore);
   private readonly bookings = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
 
   readonly isAuthenticated = this.auth.isAuthenticated;
 

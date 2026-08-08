@@ -13,14 +13,40 @@ namespace FleetRental.Infrastructure.Persistence;
 public class DbSeeder(
     FleetRentalDbContext db,
     IPasswordHasher passwordHasher,
+    ITenantContext tenantContext,
     ILogger<DbSeeder> logger)
 {
     public async Task SeedAsync(SeedOptions options, CancellationToken cancellationToken = default)
     {
         await db.Database.MigrateAsync(cancellationToken);
 
+        // Seeding creates the tenant it then works inside, so it necessarily starts
+        // outside isolation. Once the tenant is set, the rest is filtered normally.
+        var tenant = await SeedTenantAsync(options, cancellationToken);
+        tenantContext.SetTenant(tenant.Id, tenant.Code);
+
         await SeedAdminAsync(options, cancellationToken);
         await SeedCarsAsync(cancellationToken);
+    }
+
+    private async Task<Tenant> SeedTenantAsync(SeedOptions options, CancellationToken cancellationToken)
+    {
+        using var _ = tenantContext.BypassIsolation();
+
+        var code = Tenant.NormalizeCode(options.TenantCode);
+        var existing = await db.Tenants.FirstOrDefaultAsync(t => t.Code == code, cancellationToken);
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var tenant = Tenant.Create(options.TenantName, code, options.AdminEmail);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Seeded tenant {Name} ({Code}).", tenant.Name, tenant.Code);
+        return tenant;
     }
 
     private async Task SeedAdminAsync(SeedOptions options, CancellationToken cancellationToken)
@@ -105,4 +131,10 @@ public class SeedOptions
     public string AdminPassword { get; set; } = string.Empty;
 
     public string AdminFullName { get; set; } = "Fleet Administrator";
+
+    /// <summary>Display name of the first tenant.</summary>
+    public string TenantName { get; set; } = "Demo Fleet";
+
+    /// <summary>Company code clients type on first launch.</summary>
+    public string TenantCode { get; set; } = "demo-fleet";
 }

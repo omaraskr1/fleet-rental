@@ -10,6 +10,12 @@ namespace FleetRental.Application.Abstractions;
 /// </summary>
 public interface IFleetRentalDbContext
 {
+    /// <summary>
+    /// The tenant registry. Not tenant-filtered — it is the root of isolation, so
+    /// reads here must always be by code or id, never an unbounded list.
+    /// </summary>
+    DbSet<Tenant> Tenants { get; }
+
     DbSet<Car> Cars { get; }
 
     DbSet<CarPhoto> CarPhotos { get; }
@@ -23,6 +29,10 @@ public interface IFleetRentalDbContext
     DbSet<User> Users { get; }
 
     DbSet<DeviceToken> DeviceTokens { get; }
+
+    DbSet<ServiceRecord> ServiceRecords { get; }
+
+    DbSet<VehicleIssue> VehicleIssues { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

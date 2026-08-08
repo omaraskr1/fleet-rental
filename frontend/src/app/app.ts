@@ -18,10 +18,11 @@ export class App implements OnInit {
   private readonly push = inject(PushService);
 
   async ngOnInit(): Promise<void> {
-    // Restore the session before the first guarded route resolves, otherwise a
-    // signed-in user gets bounced to login on every cold start.
-    await this.auth.restoreSession();
-
+    // Tenant, theme, locale and session are all resolved before this ever
+    // runs — provideAppInitializer in app.config.ts blocks the router's
+    // initial navigation until they are, which is what guards need. Push
+    // registration doesn't gate any route, so it stays here rather than
+    // delaying first paint for a permission prompt.
     if (this.auth.isAuthenticated()) {
       await this.push.register();
     }

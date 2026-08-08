@@ -1,5 +1,4 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import {
   IonCard, IonCardContent, IonContent, IonHeader, IonIcon, IonRefresher,
@@ -9,6 +8,7 @@ import { addIcons } from 'ionicons';
 import { calendarClearOutline } from 'ionicons/icons';
 
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.component';
 
 @Component({
@@ -16,11 +16,11 @@ import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.c
   imports: [
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardContent,
     IonIcon, IonRefresher, IonRefresherContent, IonSpinner,
-    BookingStatusBadgeComponent, DatePipe,
+    BookingStatusBadgeComponent,
   ],
   template: `
     <ion-header>
-      <ion-toolbar><ion-title>My bookings</ion-title></ion-toolbar>
+      <ion-toolbar><ion-title>{{ locale.t('booking.my.title') }}</ion-title></ion-toolbar>
     </ion-header>
 
     <ion-content>
@@ -33,8 +33,8 @@ import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.c
       } @else if (store.myBookings().length === 0) {
         <div class="state">
           <ion-icon name="calendar-clear-outline" />
-          <p>No bookings yet.</p>
-          <p class="hint">Browse the fleet and request a vehicle for your next event.</p>
+          <p>{{ locale.t('booking.my.empty') }}</p>
+          <p class="hint">{{ locale.t('booking.my.emptyHint') }}</p>
         </div>
       } @else {
         @for (booking of store.myBookings(); track booking.id) {
@@ -45,9 +45,9 @@ import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.c
                 <app-booking-status-badge [status]="booking.status" />
               </div>
               <p class="dates">
-                {{ booking.startDate | date: 'd MMM' }} –
-                {{ booking.endDate | date: 'd MMM yyyy' }}
-                <span class="muted">({{ booking.totalDays }} days)</span>
+                {{ locale.formatDate(booking.startDate, { day: 'numeric', month: 'short' }) }} –
+                {{ locale.formatDate(booking.endDate, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                <span class="muted">({{ booking.totalDays }} {{ locale.t('common.days') }})</span>
               </p>
               <p class="event">{{ booking.event.name }} · {{ booking.event.location }}</p>
               @if (booking.status === 'Rejected' && booking.decisionReason) {
@@ -74,6 +74,7 @@ import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.c
 })
 export class MyBookingsPage implements OnInit {
   protected readonly store = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   constructor() {

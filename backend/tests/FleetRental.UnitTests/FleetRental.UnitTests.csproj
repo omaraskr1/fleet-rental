@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!--
+      Microsoft.ML.TimeSeries' SSA forecaster (used by RevenueForecasterTests)
+      depends on native MKL binaries under runtimes/{rid}/native/. Without a
+      RuntimeIdentifiers list, NuGet only restores the assets for the RID the
+      SDK infers at restore time, which does not reliably match every OS this
+      suite runs on (this repo develops on Windows, CI runs on Linux) — the
+      Linux runner failed with a DllNotFoundException for MklImports.so until
+      this was added.
+    -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FleetRental.Domain\FleetRental.Domain.csproj" />
+    <ProjectReference Include="..\..\src\FleetRental.Application\FleetRental.Application.csproj" />
+    <ProjectReference Include="..\..\src\FleetRental.Infrastructure\FleetRental.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -19,9 +19,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         // Stored as text: adding a role in Phase 3 must not depend on enum ordering.
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
 
-        // One account per email address, enforced by the database rather than by a
-        // check-then-insert in the signup handler.
-        builder.HasIndex(u => u.Email).IsUnique();
+        // Scoped to the tenant, not global. The same person legitimately books from
+        // two different rental companies, and a platform-wide unique email would
+        // make their second account impossible to create.
+        builder.HasIndex(u => new { u.TenantId, u.Email })
+            .IsUnique()
+            .HasDatabaseName("UX_Users_Tenant_Email");
 
         builder.HasMany(u => u.Bookings)
             .WithOne(b => b.Client)

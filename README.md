@@ -29,6 +29,111 @@ All six MVP features are implemented and verified end to end.
 
 ---
 
+## Vehicle maintenance
+
+Owner-facing mechanical tracking, reachable from the fleet table's "Maintenance"
+link on each car, plus a fleet-wide open-issues dashboard.
+
+- **Service history** — `ServiceRecord` entries (date, description, odometer,
+  cost, workshop). Logging one with a higher odometer reading than the car has
+  on file updates the car's current odometer automatically, since a service
+  visit is the natural moment that reading is taken.
+- **Service-due calculation** — a car opts in by having both a current
+  odometer reading and a service interval set; the summary compares distance
+  since the last odometer-bearing service record against that interval. A car
+  with neither tracked is never flagged due — silence is not the same as "up
+  to date."
+- **Issue reporting** — `VehicleIssue` with severity (Low/Medium/High/Critical)
+  and a lifecycle (Open → InProgress → Resolved, reopenable). A Critical
+  unresolved issue surfaces as a red badge in the admin sidebar, live across
+  every open tab via the shared `MaintenanceStore` — resolving it clears the
+  badge without a page reload.
+- **Admin-only end to end.** Clients booking a car never see any of this; every
+  endpoint in `MaintenanceController` requires the Admin role.
+
+Both new entities derive from `TenantEntity` like everything else, so tenant
+isolation and the global query filter applied nothing extra — see
+`MaintenanceTests.cs` for the cross-tenant checks.
+
+---
+
+## Multi-tenancy
+
+The platform serves multiple rental businesses from one shared database. Each is
+a `Tenant`; every car, booking, event, user and device belongs to exactly one.
+
+- **Isolation is enforced by EF Core global query filters, applied by
+  convention** to every entity implementing `ITenantOwned` — not by remembering
+  a `WHERE TenantId = ...` in each query. A new entity that forgets to derive
+  from `TenantEntity` fails `TenantIsolationTests.Every_persisted_entity_...` in
+  CI rather than silently leaking.
+- **Filters fail closed.** No tenant resolved means the filter matches nothing,
+  not everything — an unknown or missing company code returns an empty result,
+  never another tenant's data.
+- **The tenant travels inside the signed JWT**, not a header. An authenticated
+  caller cannot switch tenants by editing `X-Tenant-Code` — the middleware
+  ignores that header entirely once a token is present. The header only decides
+  which tenant an *anonymous* request (browsing, login) belongs to.
+- **Email is unique per tenant, not platform-wide** — the same person can
+  legitimately hold a client account at two different rental companies.
+- **Clients pick their company once**, by code, on first launch
+  (`select-company.page.ts`). The choice is remembered on the device; every
+  request after that carries it automatically via `tenant.interceptor.ts`.
+
+See `tests/FleetRental.IntegrationTests/TenantIsolationTests.cs` for the tests
+that exercise all of this against real SQL Server, including the deliberate
+attack case (an authenticated client trying to read another company's fleet by
+changing the header).
+
+---
+
+## Localization and theming
+
+Every screen in the client app and admin panel supports English and Arabic
+with full RTL, plus a manual light/dark theme independent of the OS setting.
+
+- **Runtime language switching**, not Angular's built-in compile-time i18n —
+  a company code is entered once per install, so shipping a separate binary
+  per language was never on the table. Translations live as plain JSON
+  (`frontend/public/i18n/{en,ar}.json`, one flat key set, 148 keys) fetched and
+  cached by `LocaleStore`. No i18n library dependency.
+- **Dates use the native `Intl` API**, not Angular's `DatePipe` — DatePipe
+  needs `@angular/common/locales/ar` registered against a single `LOCALE_ID`,
+  which is a build-time, one-locale-per-build mechanism that doesn't fit a
+  runtime switch. `LocaleStore.formatDate()` wraps `toLocaleDateString` with
+  the `-u-nu-latn` Unicode extension, so Arabic renders with Arabic month
+  names but Western numerals — the convention Gulf business apps use for
+  dates and money.
+- **RTL is mostly Ionic's own doing.** Setting `dir="rtl"` on `<html>` is the
+  only line of framework wiring required; Ionic mirrors its own components
+  automatically. The custom CSS in this app uses logical properties
+  (`padding-inline-end`, `border-inline-end`, `text-align: start`) rather than
+  `left`/`right` so it mirrors too, and the calendar's prev/next chevrons use
+  `ion-icon`'s `flipRtl` input so "previous" still visually points the
+  correct direction once flex has already reordered the buttons.
+- **Theme uses `dark.class.css`, not `dark.system.css`** — the OS-media-query
+  variant Ionic ships by default has no JS hook to override it.
+  `ThemeStore` toggles the `ion-palette-dark` class on `<html>`, defaulting to
+  the OS preference on first launch and tracking it live thereafter, until the
+  user picks light or dark explicitly.
+- **Backend error messages are not localized.** A validation message from the
+  API (e.g. "Email is required") reaches the Arabic UI in English. Translating
+  those means the API reading `Accept-Language` and maintaining a message
+  catalog per exception — real scope, deliberately left for later rather than
+  silently skipped.
+
+A real defect surfaced during this work, not a hypothetical: `App.ngOnInit`
+originally restored the session, tenant, and locale — but the router's
+initial navigation could evaluate `tenantGuard`/`authGuard` before those
+awaited restores finished, bouncing a returning signed-in user back to
+"sign in" or "select your company" on a hard reload. Fixed by moving
+restoration into a `provideAppInitializer` in `app.config.ts`, which blocks
+bootstrap — and therefore the router's first navigation — until it resolves.
+Verified by reloading directly on a deep, guarded route before and after the
+fix.
+
+---
+
 ## Repository layout
 
 ```
@@ -49,6 +154,33 @@ scripts/
   e2e-api-test.sh          full-flow API test, including double-booking
   reset-test-data.ps1      clears bookings so the suite is repeatable
 ```
+
+### Where a new feature belongs
+
+`FleetRental.Application` is organized as vertical slices, not by technical
+role: `Auth/`, `Availability/`, `Bookings/`, `Cars/`, `Notifications/`,
+`Tenants/` each hold their own service and DTOs together. A new feature
+(vehicle maintenance, analytics) gets its own folder here the same way —
+`Maintenance/MaintenanceService.cs` + `Maintenance/MaintenanceDtos.cs`, not a
+service dropped into a shared `Services/` bucket. `Abstractions/` and
+`Common/` stay reserved for things genuinely shared across every feature.
+
+`FleetRental.Infrastructure` and `FleetRental.Api` are organized by technical
+concern instead (`Controllers/`, `Persistence/Configurations/`, `Security/`)
+— that's the idiomatic convention for those layers, not a smell to fix. EF
+Core's `ApplyConfigurationsFromAssembly` is the reason entity configurations
+live together rather than beside each feature's service.
+
+**`FleetRental.Domain`'s entities and enums stay in `Entities/`/`Enums/`
+regardless of feature, and this is deliberate, not an oversight.** EF Core's
+migration snapshot (`FleetRentalDbContextModelSnapshot.cs`) identifies every
+entity by its full CLR namespace as a string key. Moving `Car` from
+`FleetRental.Domain.Entities` into a `FleetRental.Domain.Cars` namespace
+would make EF's change-detection see that as the old entity being deleted
+and a new one added — generating a migration that drops and recreates every
+table. A new domain concept's entities go in `Entities/` and `Enums/`
+alongside the existing ones; only `TenantEntity`/`Entity` inheritance and a
+sensible class name are what identify which feature they belong to.
 
 Backend dependencies point strictly inward:
 `Api → Infrastructure → Application → Domain`.
@@ -109,6 +241,8 @@ deliberately** rather than signing tokens with a weak key.
 | `ConnectionStrings:FleetRental` | `ConnectionStrings__FleetRental` | SQL Server connection |
 | `Jwt:Key` | `Jwt__Key` | 32+ characters, required |
 | `Seed:AdminPassword` | `Seed__AdminPassword` | Admin seeding is skipped if unset |
+| `Seed:TenantCode` | `Seed__TenantCode` | Company code for the seeded tenant (default `demo-fleet`) |
+| `Platform:ProvisioningKey` | `Platform__ProvisioningKey` | Gates `POST /api/tenants`; unset closes onboarding entirely |
 | `Email:*` | `Email__*` | SMTP; logs instead of sending when `Enabled` is false |
 | `Cors:AllowedOrigins` | — | Must include the Capacitor origins |
 

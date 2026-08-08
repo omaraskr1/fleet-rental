@@ -136,6 +136,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicy);
 app.UseAuthentication();
+
+// Must run AFTER authentication so the JWT tenant claim is available, and BEFORE
+// authorization and the controllers so no query executes without a tenant filter.
+app.UseMiddleware<TenantResolutionMiddleware>();
+
 app.UseAuthorization();
 app.MapControllers();
 

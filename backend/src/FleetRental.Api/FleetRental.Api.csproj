@@ -4,6 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- See the matching comment in FleetRental.UnitTests.csproj: the revenue
+         forecast endpoint depends on Microsoft.ML.TimeSeries' native MKL
+         assets, which restore is not guaranteed to fetch for a given OS
+         without an explicit RuntimeIdentifiers list — and this API needs to
+         run on whichever OS actually hosts it, not just the one it was built on. -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

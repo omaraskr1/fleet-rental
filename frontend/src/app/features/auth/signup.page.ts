@@ -8,6 +8,7 @@ import {
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { PushService } from '../../core/services/push.service';
+import { LocaleStore } from '../../core/stores/locale.store';
 
 /** Feature 5 — client signup. */
 @Component({
@@ -20,30 +21,30 @@ import { PushService } from '../../core/services/push.service';
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/login" /></ion-buttons>
-        <ion-title>Create account</ion-title>
+        <ion-title>{{ locale.t('auth.signup.title') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
       <ion-item>
-        <ion-label position="stacked">Full name</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.signup.fullName') }}</ion-label>
         <ion-input [(ngModel)]="fullName" autocapitalize="words" autocomplete="name" />
       </ion-item>
 
       <ion-item>
-        <ion-label position="stacked">Email</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.login.email') }}</ion-label>
         <ion-input type="email" [(ngModel)]="email" inputmode="email" autocomplete="email" />
       </ion-item>
 
       <ion-item>
-        <ion-label position="stacked">Phone (optional)</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.signup.phone') }}</ion-label>
         <ion-input type="tel" [(ngModel)]="phone" inputmode="tel" autocomplete="tel" />
       </ion-item>
 
       <ion-item>
-        <ion-label position="stacked">Password</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.login.password') }}</ion-label>
         <ion-input type="password" [(ngModel)]="password" autocomplete="new-password" />
-        <ion-note slot="helper">At least 8 characters.</ion-note>
+        <ion-note slot="helper">{{ locale.t('auth.signup.passwordHelper') }}</ion-note>
       </ion-item>
 
       @if (auth.error(); as error) {
@@ -51,10 +52,12 @@ import { PushService } from '../../core/services/push.service';
       }
 
       <ion-button expand="block" [disabled]="!isValid() || auth.loading()" (click)="submit()">
-        @if (auth.loading()) { <ion-spinner name="dots" /> } @else { Create account }
+        @if (auth.loading()) { <ion-spinner name="dots" /> } @else { {{ locale.t('auth.signup.createAccountButton') }} }
       </ion-button>
 
-      <p class="alt">Already have one? <a routerLink="/login">Sign in</a></p>
+      <p class="alt">
+        {{ locale.t('auth.signup.alreadyHave') }} <a routerLink="/login">{{ locale.t('auth.signup.signIn') }}</a>
+      </p>
     </ion-content>
   `,
   styles: `
@@ -65,6 +68,7 @@ import { PushService } from '../../core/services/push.service';
 })
 export class SignupPage {
   protected readonly auth = inject(AuthStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly push = inject(PushService);
   private readonly router = inject(Router);
 

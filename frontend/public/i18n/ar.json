@@ -1,0 +1,280 @@
+{
+  "common": {
+    "appName": "فليت رنتال",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "continue": "متابعة",
+    "retry": "إعادة المحاولة",
+    "days": "أيام"
+  },
+  "tenant": {
+    "title": "فليت رنتال",
+    "subtitle": "أدخل رمز شركتك للبدء.",
+    "codeLabel": "رمز الشركة",
+    "codePlaceholder": "مثال: gulf-fleet",
+    "helper": "يوفره مشغّل الأسطول الخاص بك.",
+    "continueButton": "متابعة",
+    "notFound": "لم نتمكن من العثور على شركة بالرمز \"{{code}}\"."
+  },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "welcome": "مرحبًا بعودتك",
+      "subtitle": "سجّل الدخول لطلب مركبات لفعالياتك.",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "signInButton": "تسجيل الدخول",
+      "noAccount": "ليس لديك حساب؟",
+      "createOne": "أنشئ حسابًا",
+      "fleetOwner": "مالك الأسطول؟",
+      "adminSignIn": "دخول المشرف"
+    },
+    "signup": {
+      "title": "إنشاء حساب",
+      "fullName": "الاسم الكامل",
+      "phone": "رقم الهاتف (اختياري)",
+      "passwordHelper": "8 أحرف على الأقل.",
+      "createAccountButton": "إنشاء حساب",
+      "alreadyHave": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول"
+    }
+  },
+  "tabs": {
+    "fleet": "الأسطول",
+    "bookings": "الحجوزات",
+    "profile": "الملف الشخصي",
+    "signIn": "تسجيل الدخول"
+  },
+  "cars": {
+    "title": "أسطولنا",
+    "filterAll": "الكل",
+    "available": "متاحة",
+    "bookedToday": "محجوزة اليوم",
+    "seats": "{{count}} مقاعد",
+    "perDay": "/يوم",
+    "noResults": "لا توجد مركبات في هذه الفئة.",
+    "requestVehicle": "اطلب هذه المركبة",
+    "notAvailable": "غير متاحة للحجز حاليًا",
+    "availability": "التوفر",
+    "active": "متاحة",
+    "maintenance": "صيانة",
+    "retired": "غير مستخدمة"
+  },
+  "booking": {
+    "form": {
+      "title": "طلب حجز",
+      "step1Title": "1. اختر التواريخ",
+      "step1Hint": "اضغط على تاريخ البداية، ثم تاريخ النهاية. الأيام المحجوزة لا يمكن اختيارها.",
+      "step2Title": "2. أخبرنا عن فعاليتك",
+      "eventName": "اسم الفعالية *",
+      "eventNamePlaceholder": "إطلاق منتج الخريف",
+      "eventType": "نوع الفعالية",
+      "location": "الموقع *",
+      "locationPlaceholder": "مركز دبي التجاري العالمي",
+      "attendance": "عدد الحضور المتوقع",
+      "attendancePlaceholder": "250",
+      "notes": "هل هناك ما يجب أن نعرفه؟",
+      "notesPlaceholder": "العلامة التجارية، متطلبات السائق، قيود الدخول…",
+      "submit": "إرسال الطلب"
+    },
+    "detail": {
+      "title": "الحجز",
+      "waitingNote": "بانتظار فريق الأسطول. سيتم إعلامك فور اتخاذ القرار.",
+      "event": "الفعالية",
+      "name": "الاسم",
+      "type": "النوع",
+      "location": "الموقع",
+      "attendance": "عدد الحضور المتوقع",
+      "notes": "ملاحظات",
+      "cancelButton": "إلغاء هذا الحجز"
+    },
+    "my": {
+      "title": "حجوزاتي",
+      "empty": "لا توجد حجوزات بعد.",
+      "emptyHint": "تصفّح الأسطول واطلب مركبة لفعاليتك القادمة."
+    },
+    "status": {
+      "Pending": "قيد الانتظار",
+      "Approved": "مقبول",
+      "Rejected": "مرفوض",
+      "Cancelled": "ملغى"
+    }
+  },
+  "calendar": {
+    "legendOpen": "متاح",
+    "legendPending": "مطلوب",
+    "legendBooked": "محجوز"
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "bookingWith": "الحجز مع {{company}}",
+    "openAdmin": "فتح لوحة الإدارة",
+    "signOut": "تسجيل الخروج",
+    "notSignedIn": "لم تسجّل الدخول بعد.",
+    "signIn": "تسجيل الدخول",
+    "switchCompany": "لست {{company}}؟ تبديل الشركة",
+    "language": "اللغة",
+    "theme": "المظهر"
+  },
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "تلقائي"
+  },
+  "admin": {
+    "login": {
+      "title": "دخول المشرف",
+      "subtitle": "فليت رنتال",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "signInButton": "تسجيل الدخول",
+      "clientSignIn": "دخول العميل"
+    },
+    "shell": {
+      "requests": "الطلبات",
+      "calendar": "تقويم الأسطول",
+      "vehicles": "المركبات",
+      "signOut": "تسجيل الخروج"
+    },
+    "requests": {
+      "title": "طلبات الحجز",
+      "filterAll": "الكل",
+      "filterPending": "قيد الانتظار",
+      "filterApproved": "مقبول",
+      "filterRejected": "مرفوض",
+      "client": "العميل",
+      "event": "الفعالية",
+      "attendance": "عدد الحضور",
+      "approveReject": "قبول / رفض",
+      "confirmApprove": "تأكيد القبول",
+      "confirmReject": "تأكيد الرفض",
+      "cancel": "إلغاء",
+      "reasonPlaceholder": "السبب (يظهر للعميل ضمن الإشعار)",
+      "decisionNote": "ملاحظة القرار: {{reason}}",
+      "empty": "لا يوجد شيء هنا."
+    },
+    "calendar": {
+      "title": "تقويم الأسطول",
+      "subtitle": "الثلاثون يومًا القادمة لجميع المركبات.",
+      "vehicle": "المركبة"
+    },
+    "fleet": {
+      "title": "المركبات",
+      "freeToday": "{{free}} من {{total}} متاحة اليوم.",
+      "vehicle": "المركبة",
+      "category": "الفئة",
+      "seats": "المقاعد",
+      "dailyRate": "السعر اليومي",
+      "status": "الحالة",
+      "today": "اليوم",
+      "free": "متاحة",
+      "booked": "محجوزة",
+      "maintenanceLink": "الصيانة"
+    },
+    "maintenance": {
+      "title": "الصيانة",
+      "currentOdometer": "قراءة العداد الحالية",
+      "serviceInterval": "الفاصل الزمني للصيانة",
+      "notTracked": "غير متتبَّع",
+      "lastService": "آخر صيانة",
+      "never": "لا يوجد",
+      "kmSinceService": "{{km}} كم منذ آخر صيانة",
+      "due": "الصيانة مستحقة",
+      "notDue": "محدَّثة",
+      "km": "كم",
+      "updateOdometer": "تحديث العداد",
+      "updateInterval": "تعيين الفاصل الزمني",
+      "save": "حفظ",
+      "serviceHistory": "سجل الصيانة",
+      "logService": "تسجيل صيانة",
+      "date": "التاريخ",
+      "description": "الوصف",
+      "descriptionPlaceholder": "تغيير الزيت والفلتر",
+      "odometerOptional": "العداد (اختياري)",
+      "cost": "التكلفة",
+      "performedByOptional": "تم بواسطة (اختياري)",
+      "performedByPlaceholder": "مركز الفطيم للخدمة",
+      "submitService": "تسجيل الصيانة",
+      "noHistory": "لا يوجد سجل صيانة بعد.",
+      "issuesForCar": "الأعطال",
+      "reportIssue": "الإبلاغ عن عطل",
+      "issueDescriptionPlaceholder": "التكييف لا يبرّد",
+      "severity": "الخطورة",
+      "submitIssue": "الإبلاغ عن العطل",
+      "noIssues": "لا توجد أعطال مسجَّلة."
+    },
+    "issues": {
+      "title": "أعطال المركبات",
+      "filterAll": "الكل",
+      "filterOpen": "مفتوح",
+      "filterInProgress": "قيد المعالجة",
+      "filterResolved": "تم الحل",
+      "vehicle": "المركبة",
+      "reportedBy": "المُبلِّغ",
+      "startProgress": "بدء المعالجة",
+      "resolve": "حل العطل",
+      "reopen": "إعادة الفتح",
+      "resolutionNotesPlaceholder": "ما الذي تم فعله لإصلاحه (اختياري)",
+      "empty": "لا توجد أعطال مطابقة لهذا الفلتر."
+    },
+    "analytics": {
+      "title": "التحليلات",
+      "estimatedRevenue": "الإيراد التقديري",
+      "utilization": "معدل استخدام الأسطول",
+      "approvalRate": "معدل الموافقة",
+      "activeCars": "المركبات النشطة",
+      "bookings": "الحجوزات",
+      "pending": "قيد الانتظار",
+      "approved": "معتمد",
+      "openIssues": "الأعطال المفتوحة",
+      "critical": "حرج",
+      "serviceDue": "مركبات بحاجة لصيانة",
+      "maintenanceCost": "تكلفة الصيانة",
+      "revenueTrend": "الإيراد التقديري حسب الشهر",
+      "maintenanceCostTrend": "تكلفة الصيانة حسب الشهر",
+      "utilizationByCar": "معدل الاستخدام حسب المركبة",
+      "demandByEventType": "الطلب حسب نوع الفعالية",
+      "revenueForecast": "توقع الإيراد (الأشهر الثلاثة القادمة)",
+      "forecastInsufficientHistory": "لا توجد أشهر مكتملة كافية للتوقع حتى الآن — يلزم استقرار 6 أشهر كاملة من الحجوزات على الأقل.",
+      "actual": "فعلي",
+      "projected": "متوقع",
+      "noData": "لا توجد بيانات في هذا النطاق حتى الآن.",
+      "loadError": "تعذر تحميل التحليلات. حاول مرة أخرى."
+    }
+  },
+  "enums": {
+    "category": {
+      "Sedan": "سيدان",
+      "Suv": "دفع رباعي",
+      "Van": "فان",
+      "Luxury": "فاخرة",
+      "Convertible": "مكشوفة",
+      "BrandedTruck": "شاحنة مُعلَّمة",
+      "Bus": "حافلة"
+    },
+    "eventType": {
+      "ProductLaunch": "إطلاق منتج",
+      "TradeShow": "معرض تجاري",
+      "Wedding": "حفل زفاف",
+      "CorporateEvent": "فعالية شركات",
+      "Photoshoot": "جلسة تصوير",
+      "RoadShow": "جولة ترويجية",
+      "Conference": "مؤتمر",
+      "Other": "أخرى"
+    },
+    "issueSeverity": {
+      "Low": "منخفضة",
+      "Medium": "متوسطة",
+      "High": "عالية",
+      "Critical": "حرجة"
+    },
+    "issueStatus": {
+      "Open": "مفتوح",
+      "InProgress": "قيد المعالجة",
+      "Resolved": "تم الحل"
+    }
+  }
+}

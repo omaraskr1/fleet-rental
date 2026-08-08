@@ -10,5 +10,7 @@
 @use '@ionic/angular/css/text-alignment.css';
 @use '@ionic/angular/css/flex-utils.css';
 
-/* Honours the OS light/dark setting on both platforms. */
-@use '@ionic/angular/css/palettes/dark.system.css';
+/* Class-driven, not the OS-media-query variant: ThemeStore toggles
+   .ion-palette-dark on <html> so the user's choice can override the system
+   default, while still defaulting to it on first launch. */
+@use '@ionic/angular/css/palettes/dark.class.css';

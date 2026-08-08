@@ -14,7 +14,7 @@ namespace FleetRental.Domain.Entities;
 /// exercise. The Phase 1 UI still creates the event inline with the booking, so
 /// clients never see the extra concept.
 /// </remarks>
-public class Event : Entity
+public class Event : TenantEntity
 {
     private readonly List<Booking> _bookings = [];
 

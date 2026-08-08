@@ -189,7 +189,133 @@ export const EVENT_TYPES: EventType[] = [
   'Other',
 ];
 
-/** Turns "BrandedTruck" into "Branded Truck" for display. */
-export function humanize(value: string): string {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2');
+// ---------- Maintenance ----------
+
+export type IssueSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type IssueStatus = 'Open' | 'InProgress' | 'Resolved';
+
+export const ISSUE_SEVERITIES: IssueSeverity[] = ['Low', 'Medium', 'High', 'Critical'];
+
+export interface ServiceRecord {
+  id: string;
+  carId: string;
+  performedAt: IsoDate;
+  description: string;
+  odometerKm: number | null;
+  cost: number;
+  performedBy: string | null;
+}
+
+export interface LogServiceRequest {
+  performedAt: IsoDate;
+  description: string;
+  odometerKm: number | null;
+  cost: number;
+  performedBy?: string | null;
+}
+
+export interface VehicleIssue {
+  id: string;
+  carId: string;
+  carName: string;
+  reportedByName: string;
+  description: string;
+  severity: IssueSeverity;
+  status: IssueStatus;
+  reportedAt: string;
+  resolvedAt: string | null;
+  resolutionNotes: string | null;
+}
+
+export interface ReportIssueRequest {
+  description: string;
+  severity: IssueSeverity;
+}
+
+export interface CarMaintenanceSummary {
+  carId: string;
+  carName: string;
+  currentOdometerKm: number | null;
+  serviceIntervalKm: number | null;
+  lastServiceAt: IsoDate | null;
+  kmSinceLastService: number | null;
+  isServiceDue: boolean;
+  openIssueCount: number;
+  hasBlockingIssue: boolean;
+}
+
+// ---------- Analytics ----------
+
+/**
+ * Every revenue figure here is estimated as Car.DailyRate x booked days —
+ * Phase 1 takes no payment, so there is no billed amount to report instead.
+ */
+export interface AnalyticsOverview {
+  from: IsoDate;
+  to: IsoDate;
+  totalCars: number;
+  activeCars: number;
+  totalBookings: number;
+  pendingBookings: number;
+  approvedBookings: number;
+  rejectedBookings: number;
+  cancelledBookings: number;
+  approvalRatePercent: number;
+  estimatedRevenue: number;
+  fleetUtilizationPercent: number;
+  openIssueCount: number;
+  criticalIssueCount: number;
+  carsServiceDue: number;
+  maintenanceCost: number;
+}
+
+export interface RevenuePoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  estimatedRevenue: number;
+  approvedBookings: number;
+}
+
+export interface CarUtilization {
+  carId: string;
+  carName: string;
+  bookedDays: number;
+  daysInRange: number;
+  utilizationPercent: number;
+  bookingCount: number;
+  estimatedRevenue: number;
+}
+
+export interface EventTypeBreakdown {
+  eventType: EventType;
+  bookingCount: number;
+  approvedCount: number;
+  estimatedRevenue: number;
+}
+
+export interface MaintenanceCostPoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  totalCost: number;
+  recordCount: number;
+}
+
+export interface RevenueForecastPoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  forecastedRevenue: number;
+  lowerBound: number;
+  upperBound: number;
+}
+
+/**
+ * HasSufficientHistory is false whenever there are fewer than six settled months
+ * on file — Forecast is empty in that case rather than a guess dressed up as a
+ * number, so the UI must check it before rendering anything.
+ */
+export interface RevenueForecast {
+  hasSufficientHistory: boolean;
+  history: RevenuePoint[];
+  forecast: RevenueForecastPoint[];
 }

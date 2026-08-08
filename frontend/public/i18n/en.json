@@ -1,0 +1,280 @@
+{
+  "common": {
+    "appName": "Fleet Rental",
+    "cancel": "Cancel",
+    "save": "Save",
+    "continue": "Continue",
+    "retry": "Retry",
+    "days": "days"
+  },
+  "tenant": {
+    "title": "Fleet Rental",
+    "subtitle": "Enter your company code to get started.",
+    "codeLabel": "Company code",
+    "codePlaceholder": "e.g. gulf-fleet",
+    "helper": "Provided by your fleet operator.",
+    "continueButton": "Continue",
+    "notFound": "We couldn't find a company with the code \"{{code}}\"."
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "welcome": "Welcome back",
+      "subtitle": "Sign in to request vehicles for your events.",
+      "email": "Email",
+      "password": "Password",
+      "signInButton": "Sign in",
+      "noAccount": "No account?",
+      "createOne": "Create one",
+      "fleetOwner": "Fleet owner?",
+      "adminSignIn": "Admin sign in"
+    },
+    "signup": {
+      "title": "Create account",
+      "fullName": "Full name",
+      "phone": "Phone (optional)",
+      "passwordHelper": "At least 8 characters.",
+      "createAccountButton": "Create account",
+      "alreadyHave": "Already have one?",
+      "signIn": "Sign in"
+    }
+  },
+  "tabs": {
+    "fleet": "Fleet",
+    "bookings": "Bookings",
+    "profile": "Profile",
+    "signIn": "Sign in"
+  },
+  "cars": {
+    "title": "Our Fleet",
+    "filterAll": "All",
+    "available": "Available",
+    "bookedToday": "Booked today",
+    "seats": "{{count}} seats",
+    "perDay": "/day",
+    "noResults": "No vehicles in this category.",
+    "requestVehicle": "Request this vehicle",
+    "notAvailable": "Not available for booking",
+    "availability": "Availability",
+    "active": "Active",
+    "maintenance": "Maintenance",
+    "retired": "Retired"
+  },
+  "booking": {
+    "form": {
+      "title": "Request booking",
+      "step1Title": "1. Pick your dates",
+      "step1Hint": "Tap a start date, then an end date. Booked days can't be selected.",
+      "step2Title": "2. Tell us about the event",
+      "eventName": "Event name *",
+      "eventNamePlaceholder": "Autumn Product Launch",
+      "eventType": "Event type",
+      "location": "Location *",
+      "locationPlaceholder": "Dubai World Trade Centre",
+      "attendance": "Expected attendance",
+      "attendancePlaceholder": "250",
+      "notes": "Anything we should know?",
+      "notesPlaceholder": "Branding, driver requirements, access constraints…",
+      "submit": "Submit request"
+    },
+    "detail": {
+      "title": "Booking",
+      "waitingNote": "Waiting on the fleet team. You'll be notified once it's decided.",
+      "event": "Event",
+      "name": "Name",
+      "type": "Type",
+      "location": "Location",
+      "attendance": "Expected attendance",
+      "notes": "Notes",
+      "cancelButton": "Cancel this booking"
+    },
+    "my": {
+      "title": "My bookings",
+      "empty": "No bookings yet.",
+      "emptyHint": "Browse the fleet and request a vehicle for your next event."
+    },
+    "status": {
+      "Pending": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected",
+      "Cancelled": "Cancelled"
+    }
+  },
+  "calendar": {
+    "legendOpen": "Open",
+    "legendPending": "Requested",
+    "legendBooked": "Booked"
+  },
+  "profile": {
+    "title": "Profile",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "bookingWith": "Booking with {{company}}",
+    "openAdmin": "Open admin panel",
+    "signOut": "Sign out",
+    "notSignedIn": "You're not signed in.",
+    "signIn": "Sign in",
+    "switchCompany": "Not {{company}}? Switch company",
+    "language": "Language",
+    "theme": "Appearance"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "admin": {
+    "login": {
+      "title": "Administrator sign in",
+      "subtitle": "Fleet Rental",
+      "email": "Email",
+      "password": "Password",
+      "signInButton": "Sign in",
+      "clientSignIn": "Client sign in"
+    },
+    "shell": {
+      "requests": "Requests",
+      "calendar": "Fleet calendar",
+      "vehicles": "Vehicles",
+      "signOut": "Sign out"
+    },
+    "requests": {
+      "title": "Booking requests",
+      "filterAll": "All",
+      "filterPending": "Pending",
+      "filterApproved": "Approved",
+      "filterRejected": "Rejected",
+      "client": "Client",
+      "event": "Event",
+      "attendance": "Attendance",
+      "approveReject": "Approve / reject",
+      "confirmApprove": "Confirm approve",
+      "confirmReject": "Confirm reject",
+      "cancel": "Cancel",
+      "reasonPlaceholder": "Reason (shown to the client in their notification)",
+      "decisionNote": "Decision note: {{reason}}",
+      "empty": "Nothing here."
+    },
+    "calendar": {
+      "title": "Fleet calendar",
+      "subtitle": "Next 30 days across every vehicle.",
+      "vehicle": "Vehicle"
+    },
+    "fleet": {
+      "title": "Vehicles",
+      "freeToday": "{{free}} of {{total}} free today.",
+      "vehicle": "Vehicle",
+      "category": "Category",
+      "seats": "Seats",
+      "dailyRate": "Daily rate",
+      "status": "Status",
+      "today": "Today",
+      "free": "Free",
+      "booked": "Booked",
+      "maintenanceLink": "Maintenance"
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "currentOdometer": "Current odometer",
+      "serviceInterval": "Service interval",
+      "notTracked": "Not tracked",
+      "lastService": "Last service",
+      "never": "Never",
+      "kmSinceService": "{{km}} km since last service",
+      "due": "Service due",
+      "notDue": "Up to date",
+      "km": "km",
+      "updateOdometer": "Update odometer",
+      "updateInterval": "Set interval",
+      "save": "Save",
+      "serviceHistory": "Service history",
+      "logService": "Log a service",
+      "date": "Date",
+      "description": "Description",
+      "descriptionPlaceholder": "Oil and filter change",
+      "odometerOptional": "Odometer (optional)",
+      "cost": "Cost",
+      "performedByOptional": "Performed by (optional)",
+      "performedByPlaceholder": "Al Futtaim Service Center",
+      "submitService": "Log service",
+      "noHistory": "No service history yet.",
+      "issuesForCar": "Issues",
+      "reportIssue": "Report an issue",
+      "issueDescriptionPlaceholder": "AC not cooling",
+      "severity": "Severity",
+      "submitIssue": "Report issue",
+      "noIssues": "No issues reported."
+    },
+    "issues": {
+      "title": "Vehicle issues",
+      "filterAll": "All",
+      "filterOpen": "Open",
+      "filterInProgress": "In progress",
+      "filterResolved": "Resolved",
+      "vehicle": "Vehicle",
+      "reportedBy": "Reported by",
+      "startProgress": "Start progress",
+      "resolve": "Resolve",
+      "reopen": "Reopen",
+      "resolutionNotesPlaceholder": "What was done to fix it (optional)",
+      "empty": "No issues match this filter."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "estimatedRevenue": "Estimated revenue",
+      "utilization": "Fleet utilization",
+      "approvalRate": "Approval rate",
+      "activeCars": "Active cars",
+      "bookings": "Bookings",
+      "pending": "pending",
+      "approved": "approved",
+      "openIssues": "Open issues",
+      "critical": "critical",
+      "serviceDue": "Cars due for service",
+      "maintenanceCost": "Maintenance cost",
+      "revenueTrend": "Estimated revenue by month",
+      "maintenanceCostTrend": "Maintenance cost by month",
+      "utilizationByCar": "Utilization by car",
+      "demandByEventType": "Demand by event type",
+      "revenueForecast": "Revenue forecast (next 3 months)",
+      "forecastInsufficientHistory": "Not enough completed months yet to forecast — check back once at least 6 full months of bookings have settled.",
+      "actual": "Actual",
+      "projected": "Projected",
+      "noData": "No data in this range yet.",
+      "loadError": "Could not load analytics. Please try again."
+    }
+  },
+  "enums": {
+    "category": {
+      "Sedan": "Sedan",
+      "Suv": "SUV",
+      "Van": "Van",
+      "Luxury": "Luxury",
+      "Convertible": "Convertible",
+      "BrandedTruck": "Branded Truck",
+      "Bus": "Bus"
+    },
+    "eventType": {
+      "ProductLaunch": "Product Launch",
+      "TradeShow": "Trade Show",
+      "Wedding": "Wedding",
+      "CorporateEvent": "Corporate Event",
+      "Photoshoot": "Photoshoot",
+      "RoadShow": "Road Show",
+      "Conference": "Conference",
+      "Other": "Other"
+    },
+    "issueSeverity": {
+      "Low": "Low",
+      "Medium": "Medium",
+      "High": "High",
+      "Critical": "Critical"
+    },
+    "issueStatus": {
+      "Open": "Open",
+      "InProgress": "In progress",
+      "Resolved": "Resolved"
+    }
+  }
+}

@@ -1,9 +1,10 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 
 import type { IsoDate } from '../core/models';
+import { LocaleStore } from '../core/stores/locale.store';
 
 interface DayCell {
   date: IsoDate;
@@ -24,16 +25,16 @@ interface DayCell {
   template: `
     <div class="head">
       <ion-button fill="clear" size="small" (click)="shiftMonth(-1)" [disabled]="!canGoBack()">
-        <ion-icon slot="icon-only" name="chevron-back-outline" />
+        <ion-icon slot="icon-only" name="chevron-back-outline" [flipRtl]="true" />
       </ion-button>
       <strong>{{ monthLabel() }}</strong>
       <ion-button fill="clear" size="small" (click)="shiftMonth(1)">
-        <ion-icon slot="icon-only" name="chevron-forward-outline" />
+        <ion-icon slot="icon-only" name="chevron-forward-outline" [flipRtl]="true" />
       </ion-button>
     </div>
 
     <div class="grid weekdays">
-      @for (day of weekdays; track day) {
+      @for (day of weekdayLabels(); track day) {
         <span>{{ day }}</span>
       }
     </div>
@@ -59,9 +60,9 @@ interface DayCell {
     </div>
 
     <div class="legend">
-      <span><i class="swatch open"></i> Open</span>
-      <span><i class="swatch pending"></i> Requested</span>
-      <span><i class="swatch booked"></i> Booked</span>
+      <span><i class="swatch open"></i> {{ locale.t('calendar.legendOpen') }}</span>
+      <span><i class="swatch pending"></i> {{ locale.t('calendar.legendPending') }}</span>
+      <span><i class="swatch booked"></i> {{ locale.t('calendar.legendBooked') }}</span>
     </div>
   `,
   styles: `
@@ -107,11 +108,21 @@ export class AvailabilityCalendarComponent {
     return new Date(now.getFullYear(), now.getMonth() + this.offset(), 1);
   });
 
-  protected readonly weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  protected readonly locale = inject(LocaleStore);
 
   protected readonly monthLabel = computed(() =>
-    this.viewDate().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+    this.viewDate().toLocaleDateString(this.locale.intlLocale(), { month: 'long', year: 'numeric' }),
   );
+
+  /**
+   * Short weekday names in the current language, Monday first. Derived from a
+   * fixed reference week (2024-01-01 was a Monday) rather than hand-translated
+   * strings, so it stays correct for any language without a dedicated key.
+   */
+  protected readonly weekdayLabels = computed(() => {
+    const formatter = new Intl.DateTimeFormat(this.locale.intlLocale(), { weekday: 'short' });
+    return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2024, 0, 1 + i)));
+  });
 
   /** Never let the user page back before the current month. */
   protected readonly canGoBack = computed(() => this.offset() > 0);

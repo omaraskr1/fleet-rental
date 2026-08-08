@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- See the matching comment in FleetRental.UnitTests.csproj: this project
+         transitively pulls in Microsoft.ML.TimeSeries and needs its native MKL
+         assets restored for every OS this suite runs on, not just the one the
+         SDK infers at restore time. -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FleetRental.Api\FleetRental.Api.csproj" />
+    <ProjectReference Include="..\..\src\FleetRental.Infrastructure\FleetRental.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\FleetRental.Application\FleetRental.Application.csproj" />
+    <ProjectReference Include="..\..\src\FleetRental.Domain\FleetRental.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

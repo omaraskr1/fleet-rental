@@ -8,6 +8,7 @@ import {
 
 import { AuthStore } from '../../core/stores/auth.store';
 import { PushService } from '../../core/services/push.service';
+import { LocaleStore } from '../../core/stores/locale.store';
 
 /** Feature 5 — client login. */
 @Component({
@@ -18,15 +19,15 @@ import { PushService } from '../../core/services/push.service';
   ],
   template: `
     <ion-header>
-      <ion-toolbar><ion-title>Sign in</ion-title></ion-toolbar>
+      <ion-toolbar><ion-title>{{ locale.t('auth.login.title') }}</ion-title></ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
-      <h1>Welcome back</h1>
-      <p class="sub">Sign in to request vehicles for your events.</p>
+      <h1>{{ locale.t('auth.login.welcome') }}</h1>
+      <p class="sub">{{ locale.t('auth.login.subtitle') }}</p>
 
       <ion-item>
-        <ion-label position="stacked">Email</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.login.email') }}</ion-label>
         <ion-input
           type="email"
           [(ngModel)]="email"
@@ -36,7 +37,7 @@ import { PushService } from '../../core/services/push.service';
       </ion-item>
 
       <ion-item>
-        <ion-label position="stacked">Password</ion-label>
+        <ion-label position="stacked">{{ locale.t('auth.login.password') }}</ion-label>
         <ion-input
           type="password"
           [(ngModel)]="password"
@@ -49,14 +50,14 @@ import { PushService } from '../../core/services/push.service';
       }
 
       <ion-button expand="block" [disabled]="auth.loading()" (click)="submit()">
-        @if (auth.loading()) { <ion-spinner name="dots" /> } @else { Sign in }
+        @if (auth.loading()) { <ion-spinner name="dots" /> } @else { {{ locale.t('auth.login.signInButton') }} }
       </ion-button>
 
       <p class="alt">
-        No account? <a routerLink="/signup">Create one</a>
+        {{ locale.t('auth.login.noAccount') }} <a routerLink="/signup">{{ locale.t('auth.login.createOne') }}</a>
       </p>
       <p class="alt muted">
-        Fleet owner? <a routerLink="/admin/login">Admin sign in</a>
+        {{ locale.t('auth.login.fleetOwner') }} <a routerLink="/admin/login">{{ locale.t('auth.login.adminSignIn') }}</a>
       </p>
     </ion-content>
   `,
@@ -71,6 +72,7 @@ import { PushService } from '../../core/services/push.service';
 })
 export class LoginPage {
   protected readonly auth = inject(AuthStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly push = inject(PushService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

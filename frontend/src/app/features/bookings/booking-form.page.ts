@@ -10,7 +10,8 @@ import {
 import { AvailabilityCalendarComponent } from '../../shared/availability-calendar.component';
 import { BookingsStore } from '../../core/stores/bookings.store';
 import { CarsStore } from '../../core/stores/cars.store';
-import { EVENT_TYPES, humanize, type EventType, type IsoDate } from '../../core/models';
+import { LocaleStore } from '../../core/stores/locale.store';
+import { EVENT_TYPES, type EventType, type IsoDate } from '../../core/models';
 
 /** Feature 3 — the booking request form. */
 @Component({
@@ -25,17 +26,15 @@ import { EVENT_TYPES, humanize, type EventType, type IsoDate } from '../../core/
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button [defaultHref]="'/cars/' + id()" /></ion-buttons>
-        <ion-title>Request booking</ion-title>
+        <ion-title>{{ locale.t('booking.form.title') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <ion-card>
         <ion-card-content>
-          <h2>1. Pick your dates</h2>
-          <p class="hint">
-            Tap a start date, then an end date. Booked days can't be selected.
-          </p>
+          <h2>{{ locale.t('booking.form.step1Title') }}</h2>
+          <p class="hint">{{ locale.t('booking.form.step1Hint') }}</p>
 
           <app-availability-calendar
             [bookedDates]="cars.bookedDateSet()"
@@ -47,7 +46,12 @@ import { EVENT_TYPES, humanize, type EventType, type IsoDate } from '../../core/
 
           @if (startDate()) {
             <ion-note class="selection">
-              {{ startDate() }}@if (endDate()) { → {{ endDate() }} ({{ totalDays() }} days) }
+              {{ locale.formatDate(startDate()!, { day: 'numeric', month: 'short' }) }}
+              @if (endDate()) {
+                →
+                {{ locale.formatDate(endDate()!, { day: 'numeric', month: 'short' }) }}
+                ({{ totalDays() }} {{ locale.t('common.days') }})
+              }
             </ion-note>
           }
         </ion-card-content>
@@ -55,41 +59,41 @@ import { EVENT_TYPES, humanize, type EventType, type IsoDate } from '../../core/
 
       <ion-card>
         <ion-card-content>
-          <h2>2. Tell us about the event</h2>
+          <h2>{{ locale.t('booking.form.step2Title') }}</h2>
 
           <ion-item>
-            <ion-label position="stacked">Event name *</ion-label>
+            <ion-label position="stacked">{{ locale.t('booking.form.eventName') }}</ion-label>
             <ion-input
               [(ngModel)]="eventName"
-              placeholder="Autumn Product Launch"
+              [placeholder]="locale.t('booking.form.eventNamePlaceholder')"
               autocapitalize="words" />
           </ion-item>
 
           <ion-item>
-            <ion-label position="stacked">Event type</ion-label>
+            <ion-label position="stacked">{{ locale.t('booking.form.eventType') }}</ion-label>
             <ion-select [(ngModel)]="eventType" interface="action-sheet">
               @for (type of eventTypes; track type) {
-                <ion-select-option [value]="type">{{ label(type) }}</ion-select-option>
+                <ion-select-option [value]="type">{{ eventTypeLabel(type) }}</ion-select-option>
               }
             </ion-select>
           </ion-item>
 
           <ion-item>
-            <ion-label position="stacked">Location *</ion-label>
-            <ion-input [(ngModel)]="location" placeholder="Dubai World Trade Centre" />
+            <ion-label position="stacked">{{ locale.t('booking.form.location') }}</ion-label>
+            <ion-input [(ngModel)]="location" [placeholder]="locale.t('booking.form.locationPlaceholder')" />
           </ion-item>
 
           <ion-item>
-            <ion-label position="stacked">Expected attendance</ion-label>
-            <ion-input type="number" [(ngModel)]="attendance" placeholder="250" />
+            <ion-label position="stacked">{{ locale.t('booking.form.attendance') }}</ion-label>
+            <ion-input type="number" [(ngModel)]="attendance" [placeholder]="locale.t('booking.form.attendancePlaceholder')" />
           </ion-item>
 
           <ion-item>
-            <ion-label position="stacked">Anything we should know?</ion-label>
+            <ion-label position="stacked">{{ locale.t('booking.form.notes') }}</ion-label>
             <ion-textarea
               [(ngModel)]="notes"
               [autoGrow]="true"
-              placeholder="Branding, driver requirements, access constraints…" />
+              [placeholder]="locale.t('booking.form.notesPlaceholder')" />
           </ion-item>
         </ion-card-content>
       </ion-card>
@@ -108,7 +112,7 @@ import { EVENT_TYPES, humanize, type EventType, type IsoDate } from '../../core/
           @if (bookings.submitting()) {
             <ion-spinner name="dots" />
           } @else {
-            Submit request
+            {{ locale.t('booking.form.submit') }}
           }
         </ion-button>
       </ion-toolbar>
@@ -127,6 +131,7 @@ export class BookingFormPage implements OnInit {
 
   protected readonly cars = inject(CarsStore);
   protected readonly bookings = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
 
   protected readonly eventTypes = EVENT_TYPES;
@@ -160,8 +165,8 @@ export class BookingFormPage implements OnInit {
     this.bookings.clearError();
   }
 
-  protected label(value: string): string {
-    return humanize(value);
+  protected eventTypeLabel(value: string): string {
+    return this.locale.t(`enums.eventType.${value}`);
   }
 
   /**

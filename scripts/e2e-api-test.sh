@@ -3,6 +3,8 @@
 set -u
 export PATH="$PATH:/c/Program Files/nodejs"
 API=http://localhost:5180/api
+TENANT=${TENANT_CODE:-demo-fleet}
+TH="X-Tenant-Code: $TENANT"
 TMP=$(mktemp -d)
 pass=0; fail=0
 ok(){ echo "  PASS: $1"; pass=$((pass+1)); }
@@ -11,7 +13,7 @@ no(){ echo "  FAIL: $1"; fail=$((fail+1)); }
 q(){ node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{try{const d=JSON.parse(s);const r=eval(process.argv[1]);console.log(r===undefined?"":r)}catch(e){console.log("")}})' "$1"; }
 
 echo "== 1. Car listing (feature 1) =="
-CARS=$(curl -s $API/cars)
+CARS=$(curl -s -H "$TH" $API/cars)
 COUNT=$(echo "$CARS" | q 'd.length')
 [ "$COUNT" -ge 5 ] 2>/dev/null && ok "listed $COUNT cars" || no "expected >=5 cars, got '$COUNT'"
 CAR_ID=$(echo "$CARS" | q 'd[0].id')
@@ -19,7 +21,7 @@ echo "  car: $(echo "$CARS" | q 'd[0].name') | photo: $(echo "$CARS" | q '(d[0].
 
 echo "== 2. Client signup (feature 5) =="
 EMAIL="client$RANDOM$RANDOM@test.com"
-SIGNUP=$(curl -s -X POST $API/auth/signup -H "Content-Type: application/json" \
+SIGNUP=$(curl -s -X POST $API/auth/signup -H "Content-Type: application/json" -H "$TH" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"TestPass123\",\"fullName\":\"Test Client\"}")
 CTOK=$(echo "$SIGNUP" | q 'd.accessToken')
 [ -n "$CTOK" ] && ok "signed up, got token" || no "signup failed: $SIGNUP"
@@ -27,18 +29,18 @@ ROLE=$(echo "$SIGNUP" | q 'd.user.role')
 [ "$ROLE" = "Client" ] && ok "public signup yields role=Client" || no "role was '$ROLE'"
 
 echo "== 3. Weak password rejected =="
-BAD=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/signup -H "Content-Type: application/json" \
+BAD=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/signup -H "Content-Type: application/json" -H "$TH" \
   -d '{"email":"x@y.com","password":"short","fullName":"X"}')
 [ "$BAD" = "400" ] && ok "short password -> 400" || no "expected 400, got $BAD"
 
 echo "== 4. Admin login (feature 5) =="
-ALOGIN=$(curl -s -X POST $API/auth/admin/login -H "Content-Type: application/json" \
+ALOGIN=$(curl -s -X POST $API/auth/admin/login -H "Content-Type: application/json" -H "$TH" \
   -d '{"email":"admin@fleetrental.local","password":"ChangeMe!2026"}')
 ATOK=$(echo "$ALOGIN" | q 'd.accessToken')
 [ -n "$ATOK" ] && ok "admin logged in" || no "admin login failed: $ALOGIN"
 
 echo "== 5. Client blocked from admin login =="
-CBLOCK=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/admin/login -H "Content-Type: application/json" \
+CBLOCK=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/admin/login -H "Content-Type: application/json" -H "$TH" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"TestPass123\"}")
 [ "$CBLOCK" = "403" ] && ok "client on admin login -> 403" || no "expected 403, got $CBLOCK"
 
@@ -59,7 +61,7 @@ FORB=$(curl -s -o /dev/null -w "%{http_code}" "$API/bookings" -H "Authorization:
 
 echo "== 9. Second client books OVERLAPPING dates =="
 EMAIL2="client$RANDOM$RANDOM@test.com"
-CTOK2=$(curl -s -X POST $API/auth/signup -H "Content-Type: application/json" \
+CTOK2=$(curl -s -X POST $API/auth/signup -H "Content-Type: application/json" -H "$TH" \
   -d "{\"email\":\"$EMAIL2\",\"password\":\"TestPass123\",\"fullName\":\"Rival Client\"}" | q 'd.accessToken')
 B2=$(curl -s -X POST $API/bookings -H "Content-Type: application/json" -H "Authorization: Bearer $CTOK2" \
   -d "{\"carId\":\"$CAR_ID\",\"startDate\":\"2026-10-04\",\"endDate\":\"2026-10-08\",\"eventName\":\"Rival Trade Show\",\"eventType\":\"TradeShow\",\"eventLocation\":\"Abu Dhabi\"}")
@@ -82,7 +84,7 @@ else
 fi
 
 echo "== 12. Calendar reflects the approval (feature 2) =="
-AV=$(curl -s "$API/cars/$CAR_ID/availability?from=2026-09-25&to=2026-10-15")
+AV=$(curl -s -H "$TH" "$API/cars/$CAR_ID/availability?from=2026-09-25&to=2026-10-15")
 echo "  booked : $(echo "$AV" | q 'JSON.stringify(d.bookedDates)')"
 echo "  pending: $(echo "$AV" | q 'JSON.stringify(d.pendingDates)')"
 BD=$(echo "$AV" | q 'd.bookedDates.length')

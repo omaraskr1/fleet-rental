@@ -8,7 +8,7 @@ namespace FleetRental.Domain.Entities;
 /// <see cref="UserRole"/> discriminator: the login screens are separate in the UI,
 /// but a single identity store keeps token issuance and lookups uniform.
 /// </summary>
-public class User : Entity
+public class User : TenantEntity
 {
     private readonly List<Booking> _bookings = [];
     private readonly List<DeviceToken> _deviceTokens = [];

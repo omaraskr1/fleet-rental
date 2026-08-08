@@ -1,5 +1,4 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonButton, IonCard, IonCardContent, IonNote, IonSegment, IonSegmentButton,
@@ -7,24 +6,25 @@ import {
 } from '@ionic/angular/standalone';
 
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.component';
-import { humanize, type BookingStatus } from '../../core/models';
+import type { BookingStatus } from '../../core/models';
 
 /** Feature 4 — the approve/reject queue. */
 @Component({
   selector: 'app-admin-requests',
   imports: [
     IonSegment, IonSegmentButton, IonLabel, IonCard, IonCardContent, IonButton,
-    IonTextarea, IonNote, IonSpinner, BookingStatusBadgeComponent, DatePipe, FormsModule,
+    IonTextarea, IonNote, IonSpinner, BookingStatusBadgeComponent, FormsModule,
   ],
   template: `
-    <h1>Booking requests</h1>
+    <h1>{{ locale.t('admin.requests.title') }}</h1>
 
     <ion-segment [value]="store.statusFilter() ?? 'all'" (ionChange)="onFilter($event)">
-      <ion-segment-button value="all"><ion-label>All</ion-label></ion-segment-button>
-      <ion-segment-button value="Pending"><ion-label>Pending</ion-label></ion-segment-button>
-      <ion-segment-button value="Approved"><ion-label>Approved</ion-label></ion-segment-button>
-      <ion-segment-button value="Rejected"><ion-label>Rejected</ion-label></ion-segment-button>
+      <ion-segment-button value="all"><ion-label>{{ locale.t('admin.requests.filterAll') }}</ion-label></ion-segment-button>
+      <ion-segment-button value="Pending"><ion-label>{{ locale.t('admin.requests.filterPending') }}</ion-label></ion-segment-button>
+      <ion-segment-button value="Approved"><ion-label>{{ locale.t('admin.requests.filterApproved') }}</ion-label></ion-segment-button>
+      <ion-segment-button value="Rejected"><ion-label>{{ locale.t('admin.requests.filterRejected') }}</ion-label></ion-segment-button>
     </ion-segment>
 
     @if (store.error(); as error) {
@@ -34,7 +34,7 @@ import { humanize, type BookingStatus } from '../../core/models';
     @if (store.loading() && store.allBookings().length === 0) {
       <div class="state"><ion-spinner /></div>
     } @else if (store.filteredBookings().length === 0) {
-      <p class="state">Nothing here.</p>
+      <p class="state">{{ locale.t('admin.requests.empty') }}</p>
     } @else {
       @for (booking of store.filteredBookings(); track booking.id) {
         <ion-card>
@@ -43,21 +43,21 @@ import { humanize, type BookingStatus } from '../../core/models';
               <div>
                 <h2>{{ booking.carName }}</h2>
                 <p class="dates">
-                  {{ booking.startDate | date: 'd MMM' }} –
-                  {{ booking.endDate | date: 'd MMM yyyy' }}
-                  <span class="muted">({{ booking.totalDays }} days)</span>
+                  {{ locale.formatDate(booking.startDate, { day: 'numeric', month: 'short' }) }} –
+                  {{ locale.formatDate(booking.endDate, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                  <span class="muted">({{ booking.totalDays }} {{ locale.t('common.days') }})</span>
                 </p>
               </div>
               <app-booking-status-badge [status]="booking.status" />
             </div>
 
             <div class="grid">
-              <div><small>Client</small><p>{{ booking.clientName }}</p>
+              <div><small>{{ locale.t('admin.requests.client') }}</small><p>{{ booking.clientName }}</p>
                    <p class="muted">{{ booking.clientEmail }}</p></div>
-              <div><small>Event</small><p>{{ booking.event.name }}</p>
-                   <p class="muted">{{ label(booking.event.type) }} · {{ booking.event.location }}</p></div>
+              <div><small>{{ locale.t('admin.requests.event') }}</small><p>{{ booking.event.name }}</p>
+                   <p class="muted">{{ eventTypeLabel(booking.event.type) }} · {{ booking.event.location }}</p></div>
               @if (booking.event.expectedAttendance) {
-                <div><small>Attendance</small><p>{{ booking.event.expectedAttendance }}</p></div>
+                <div><small>{{ locale.t('admin.requests.attendance') }}</small><p>{{ booking.event.expectedAttendance }}</p></div>
               }
             </div>
 
@@ -69,27 +69,27 @@ import { humanize, type BookingStatus } from '../../core/models';
               @if (decidingId() === booking.id) {
                 <ion-textarea
                   [(ngModel)]="reason"
-                  placeholder="Reason (shown to the client in their notification)"
+                  [placeholder]="locale.t('admin.requests.reasonPlaceholder')"
                   [autoGrow]="true"
                   fill="outline" />
                 <div class="actions">
                   <ion-button size="small" color="success"
                               [disabled]="store.submitting()"
-                              (click)="approve(booking.id)">Confirm approve</ion-button>
+                              (click)="approve(booking.id)">{{ locale.t('admin.requests.confirmApprove') }}</ion-button>
                   <ion-button size="small" color="danger" fill="outline"
                               [disabled]="store.submitting()"
-                              (click)="reject(booking.id)">Confirm reject</ion-button>
-                  <ion-button size="small" fill="clear" (click)="cancelDecision()">Cancel</ion-button>
+                              (click)="reject(booking.id)">{{ locale.t('admin.requests.confirmReject') }}</ion-button>
+                  <ion-button size="small" fill="clear" (click)="cancelDecision()">{{ locale.t('admin.requests.cancel') }}</ion-button>
                 </div>
               } @else {
                 <div class="actions">
                   <ion-button size="small" (click)="startDecision(booking.id)">
-                    Approve / reject
+                    {{ locale.t('admin.requests.approveReject') }}
                   </ion-button>
                 </div>
               }
             } @else if (booking.decisionReason) {
-              <p class="notes muted">Decision note: {{ booking.decisionReason }}</p>
+              <p class="notes muted">{{ locale.t('admin.requests.decisionNote', { reason: booking.decisionReason }) }}</p>
             }
           </ion-card-content>
         </ion-card>
@@ -114,6 +114,7 @@ import { humanize, type BookingStatus } from '../../core/models';
 })
 export class AdminRequestsPage implements OnInit {
   protected readonly store = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
 
   /** Which row has its decision panel open. Null means none. */
   protected readonly decidingId = signal<string | null>(null);
@@ -123,8 +124,8 @@ export class AdminRequestsPage implements OnInit {
     void this.store.loadAllBookings();
   }
 
-  protected label(value: string): string {
-    return humanize(value);
+  protected eventTypeLabel(value: string): string {
+    return this.locale.t(`enums.eventType.${value}`);
   }
 
   protected onFilter(event: CustomEvent): void {

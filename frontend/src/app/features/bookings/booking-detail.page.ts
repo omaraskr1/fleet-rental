@@ -1,5 +1,4 @@
 import { Component, inject, input, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import {
   IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonContent,
   IonHeader, IonItem, IonLabel, IonList, IonSpinner, IonTitle, IonToolbar,
@@ -7,21 +6,22 @@ import {
 
 import { ApiService } from '../../core/services/api.service';
 import { BookingsStore } from '../../core/stores/bookings.store';
+import { LocaleStore } from '../../core/stores/locale.store';
 import { BookingStatusBadgeComponent } from '../../shared/booking-status-badge.component';
-import { humanize, type Booking } from '../../core/models';
+import type { Booking } from '../../core/models';
 
 @Component({
   selector: 'app-booking-detail',
   imports: [
     IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonContent,
     IonCard, IonCardContent, IonList, IonItem, IonLabel, IonButton, IonSpinner,
-    BookingStatusBadgeComponent, DatePipe,
+    BookingStatusBadgeComponent,
   ],
   template: `
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/bookings" /></ion-buttons>
-        <ion-title>Booking</ion-title>
+        <ion-title>{{ locale.t('booking.detail.title') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -34,12 +34,13 @@ import { humanize, type Booking } from '../../core/models';
               <app-booking-status-badge [status]="b.status" />
             </div>
             <p class="dates">
-              {{ b.startDate | date: 'EEE d MMM' }} – {{ b.endDate | date: 'EEE d MMM yyyy' }}
-              <span class="muted">({{ b.totalDays }} days)</span>
+              {{ locale.formatDate(b.startDate, { weekday: 'short', day: 'numeric', month: 'short' }) }} –
+              {{ locale.formatDate(b.endDate, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }}
+              <span class="muted">({{ b.totalDays }} {{ locale.t('common.days') }})</span>
             </p>
 
             @if (b.status === 'Pending') {
-              <p class="note">Waiting on the fleet team. You'll be notified once it's decided.</p>
+              <p class="note">{{ locale.t('booking.detail.waitingNote') }}</p>
             } @else if (b.decisionReason) {
               <p class="note">{{ b.decisionReason }}</p>
             }
@@ -48,18 +49,18 @@ import { humanize, type Booking } from '../../core/models';
 
         <ion-card>
           <ion-card-content>
-            <h2>Event</h2>
+            <h2>{{ locale.t('booking.detail.event') }}</h2>
             <ion-list lines="none">
-              <ion-item><ion-label><small>Name</small><p>{{ b.event.name }}</p></ion-label></ion-item>
-              <ion-item><ion-label><small>Type</small><p>{{ label(b.event.type) }}</p></ion-label></ion-item>
-              <ion-item><ion-label><small>Location</small><p>{{ b.event.location }}</p></ion-label></ion-item>
+              <ion-item><ion-label><small>{{ locale.t('booking.detail.name') }}</small><p>{{ b.event.name }}</p></ion-label></ion-item>
+              <ion-item><ion-label><small>{{ locale.t('booking.detail.type') }}</small><p>{{ eventTypeLabel(b.event.type) }}</p></ion-label></ion-item>
+              <ion-item><ion-label><small>{{ locale.t('booking.detail.location') }}</small><p>{{ b.event.location }}</p></ion-label></ion-item>
               @if (b.event.expectedAttendance) {
                 <ion-item>
-                  <ion-label><small>Expected attendance</small><p>{{ b.event.expectedAttendance }}</p></ion-label>
+                  <ion-label><small>{{ locale.t('booking.detail.attendance') }}</small><p>{{ b.event.expectedAttendance }}</p></ion-label>
                 </ion-item>
               }
               @if (b.event.notes) {
-                <ion-item><ion-label><small>Notes</small><p>{{ b.event.notes }}</p></ion-label></ion-item>
+                <ion-item><ion-label><small>{{ locale.t('booking.detail.notes') }}</small><p>{{ b.event.notes }}</p></ion-label></ion-item>
               }
             </ion-list>
           </ion-card-content>
@@ -68,7 +69,7 @@ import { humanize, type Booking } from '../../core/models';
         @if (b.status === 'Pending' || b.status === 'Approved') {
           <div class="actions">
             <ion-button expand="block" fill="outline" color="danger" (click)="cancel(b.id)">
-              Cancel this booking
+              {{ locale.t('booking.detail.cancelButton') }}
             </ion-button>
           </div>
         }
@@ -94,6 +95,7 @@ export class BookingDetailPage implements OnInit {
 
   private readonly api = inject(ApiService);
   private readonly store = inject(BookingsStore);
+  protected readonly locale = inject(LocaleStore);
 
   protected readonly booking = signal<Booking | null>(null);
 
@@ -101,8 +103,8 @@ export class BookingDetailPage implements OnInit {
     this.booking.set(await this.api.getBooking(this.id()));
   }
 
-  protected label(value: string): string {
-    return humanize(value);
+  protected eventTypeLabel(value: string): string {
+    return this.locale.t(`enums.eventType.${value}`);
   }
 
   protected async cancel(id: string): Promise<void> {

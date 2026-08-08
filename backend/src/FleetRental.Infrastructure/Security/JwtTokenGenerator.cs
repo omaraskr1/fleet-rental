@@ -25,6 +25,11 @@ public class JwtTokenGenerator(IOptions<JwtOptions> options) : ITokenGenerator
 
             // Role drives the [Authorize(Roles = ...)] policies on admin endpoints.
             new(ClaimTypes.Role, user.Role.ToString()),
+
+            // The tenant travels inside the signed token so it cannot be altered
+            // by the caller. TenantResolutionMiddleware prefers this over any
+            // header precisely because this one is tamper-evident.
+            new("tenant_id", user.TenantId.ToString()),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
