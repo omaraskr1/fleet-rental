@@ -56,7 +56,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libomp5
-          sudo ln -sf "$(dpkg -L libomp5 | grep -E 'libomp\.so' | head -n1)" /usr/lib/x86_64-linux-gnu/libiomp5.so
+          # libomp5 on recent Ubuntu is a transitional metapackage — the actual
+          # shared library ships in a versioned package (e.g. libomp5-18), so
+          # locate it on disk rather than assume which package or path owns it.
+          sudo ln -sf "$(find /usr/lib -name 'libomp.so.*' | head -n1)" /usr/lib/x86_64-linux-gnu/libiomp5.so
 
       - name: Restore
         run: dotnet restore backend/FleetRental.slnx
