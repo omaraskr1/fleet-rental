@@ -22,6 +22,7 @@ import type {
   IsoDate,
   IssueStatus,
   LogServiceRequest,
+  BookingApprovalPredictions,
   MaintenanceCostPoint,
   ReportIssueRequest,
   RevenueForecast,
@@ -263,6 +264,12 @@ export class ApiService {
       this.http.get<EventTypeBreakdown[]>(`${this.base}/analytics/event-types`, {
         params: this.rangeParams(from, to),
       }),
+    );
+  }
+
+  getBookingApprovalPredictions(): Promise<BookingApprovalPredictions> {
+    return firstValueFrom(
+      this.http.get<BookingApprovalPredictions>(`${this.base}/analytics/booking-predictions`),
     );
   }
 

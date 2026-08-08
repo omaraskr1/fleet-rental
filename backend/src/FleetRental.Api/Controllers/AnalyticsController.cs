@@ -59,6 +59,13 @@ public class AnalyticsController(AnalyticsService analytics) : ControllerBase
         return Ok(await analytics.GetMaintenanceCostTrendAsync(f, t, ct));
     }
 
+    /// <summary>Approval likelihood for every pending request, for sorting the admin queue.</summary>
+    [HttpGet("booking-predictions")]
+    [ProducesResponseType<BookingApprovalPredictionsDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<BookingApprovalPredictionsDto>> GetBookingApprovalPredictions(
+        CancellationToken ct) =>
+        Ok(await analytics.GetBookingApprovalPredictionsAsync(ct));
+
     [HttpGet("revenue-forecast")]
     [ProducesResponseType<RevenueForecastDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<RevenueForecastDto>> GetRevenueForecast(

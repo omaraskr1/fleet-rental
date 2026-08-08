@@ -163,6 +163,142 @@ public class AnalyticsService(IFleetRentalDbContext db)
         return new RevenueForecastDto { HasSufficientHistory = true, History = history, Forecast = forecastPoints };
     }
 
+    /// <summary>
+    /// Scores every pending request by how likely this fleet's own past decisions
+    /// say it is to be approved, so the admin queue can lead with the obvious yeses
+    /// and surface the unusual requests that actually need thought.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Trained fresh on each call rather than cached. At the capped
+    /// <see cref="BookingApprovalModel.MaxTrainingRows"/> rows, logistic regression
+    /// fits in a few tens of milliseconds, and an admin opens this screen a handful
+    /// of times a day — so a cache would buy nothing while introducing two ways to
+    /// be wrong: a stale model that ignores decisions just made, and a cache key
+    /// that leaks one tenant's model to another. Revisit if training rows or request
+    /// volume grow by orders of magnitude.
+    /// </para>
+    /// <para>
+    /// Cancelled bookings are excluded from training: the client withdrew, so the
+    /// admin never rendered a judgement, and treating that as a rejection would
+    /// teach the model to predict client behaviour under the guise of predicting
+    /// the admin's.
+    /// </para>
+    /// </remarks>
+    public async Task<BookingApprovalPredictionsDto> GetBookingApprovalPredictionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await db.Bookings
+            .Select(b => new PredictionRow(
+                b.Id,
+                b.ClientId,
+                b.CreatedAt,
+                b.Status,
+                b.Period.Start,
+                b.Period.End,
+                b.Event.Type,
+                b.Event.ExpectedAttendance,
+                b.Car.Category))
+            .ToListAsync(cancellationToken);
+
+        var priorsByBooking = BuildClientPriors(rows);
+
+        var decided = rows
+            .Where(r => r.Status is BookingStatus.Approved or BookingStatus.Rejected)
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(BookingApprovalModel.MaxTrainingRows)
+            .Select(r => ToFeatures(r, priorsByBooking[r.Id], r.Status == BookingStatus.Approved))
+            .ToList();
+
+        var pending = rows
+            .Where(r => r.Status == BookingStatus.Pending)
+            .Select(r => new BookingApprovalModel.PendingBooking(
+                r.Id,
+                ToFeatures(r, priorsByBooking[r.Id], approved: false)))
+            .ToList();
+
+        var result = BookingApprovalModel.Run(decided, pending);
+
+        return new BookingApprovalPredictionsDto
+        {
+            HasSufficientData = result.HasSufficientData,
+            TrainedOnBookings = result.TrainedOnRows,
+            MinimumRequired = BookingApprovalModel.MinimumTrainingRows,
+            Predictions = [.. result.ProbabilityByBookingId
+                .Select(kvp => new BookingApprovalPredictionDto
+                {
+                    BookingId = kvp.Key,
+                    ApprovalProbability = Math.Round(kvp.Value, 3),
+                })
+                .OrderByDescending(p => p.ApprovalProbability)],
+        };
+    }
+
+    /// <summary>
+    /// A client's booking count and cancellation rate <em>as they stood when each
+    /// request was submitted</em>, not as they stand today.
+    /// </summary>
+    /// <remarks>
+    /// This distinction is the whole ballgame. Using present-day totals would let a
+    /// two-year-old training row carry information that did not exist when the admin
+    /// decided it — the model would score well in training by reading the future and
+    /// then underperform on the live queue, where only the past is available.
+    /// </remarks>
+    private static Dictionary<Guid, ClientPriors> BuildClientPriors(IReadOnlyCollection<PredictionRow> rows)
+    {
+        var priors = new Dictionary<Guid, ClientPriors>(rows.Count);
+
+        foreach (var clientBookings in rows.GroupBy(r => r.ClientId))
+        {
+            var ordered = clientBookings.OrderBy(r => r.CreatedAt).ToList();
+            var seen = 0;
+            var cancelled = 0;
+
+            foreach (var booking in ordered)
+            {
+                priors[booking.Id] = new ClientPriors(seen, seen == 0 ? 0f : (float)cancelled / seen);
+
+                seen++;
+                if (booking.Status == BookingStatus.Cancelled)
+                {
+                    cancelled++;
+                }
+            }
+        }
+
+        return priors;
+    }
+
+    private static BookingApprovalModel.BookingFeatures ToFeatures(
+        PredictionRow row, ClientPriors priors, bool approved) => new()
+        {
+            // Clamped at zero: a booking created after its own start date would be
+            // a data error, and a negative lead time would skew normalisation.
+            LeadTimeDays = Math.Max(0, row.Start.DayNumber - DateOnly.FromDateTime(row.CreatedAt.UtcDateTime).DayNumber),
+            TotalDays = row.End.DayNumber - row.Start.DayNumber + 1,
+            ExpectedAttendance = row.ExpectedAttendance ?? 0,
+            ClientPriorBookings = priors.BookingCount,
+            ClientPriorCancellationRate = priors.CancellationRate,
+            StartDayOfWeek = (int)row.Start.DayOfWeek,
+            StartMonth = row.Start.Month,
+            EventType = row.EventType.ToString(),
+            CarCategory = row.CarCategory.ToString(),
+            Approved = approved,
+        };
+
+    private sealed record ClientPriors(int BookingCount, float CancellationRate);
+
+    private sealed record PredictionRow(
+        Guid Id,
+        Guid ClientId,
+        DateTimeOffset CreatedAt,
+        BookingStatus Status,
+        DateOnly Start,
+        DateOnly End,
+        EventType EventType,
+        int? ExpectedAttendance,
+        CarCategory CarCategory);
+
     /// <summary>Demand per car — which vehicles carry the fleet and which sit idle.</summary>
     public async Task<IReadOnlyList<CarUtilizationDto>> GetUtilizationAsync(
         DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
