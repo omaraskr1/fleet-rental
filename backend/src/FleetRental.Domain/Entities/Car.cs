@@ -15,13 +15,21 @@ public class Car : TenantEntity
 
     private Car() { } // EF Core
 
-    private Car(string name, string description, CarCategory category, int seats, decimal dailyRate, string? licensePlate)
+    private Car(
+        string name,
+        string description,
+        CarCategory category,
+        int seats,
+        decimal rate,
+        PricingModel pricingModel,
+        string? licensePlate)
     {
         Name = name;
         Description = description;
         Category = category;
         Seats = seats;
-        DailyRate = dailyRate;
+        Rate = rate;
+        PricingModel = pricingModel;
         LicensePlate = licensePlate;
     }
 
@@ -34,10 +42,15 @@ public class Car : TenantEntity
     public int Seats { get; private set; }
 
     /// <summary>
-    /// Indicative daily price. Phase 1 takes no payment, so this is shown for
-    /// information only and is not used to compute a total anywhere.
+    /// Indicative price, read per <see cref="PricingModel"/>. Phase 1 takes no
+    /// payment, so this is shown for information only and is not used to compute
+    /// a booking total anywhere — Analytics is the one place that treats it as a
+    /// number, for estimated revenue.
     /// </summary>
-    public decimal DailyRate { get; private set; }
+    public decimal Rate { get; private set; }
+
+    /// <summary>Whether <see cref="Rate"/> applies per day or once per booking.</summary>
+    public PricingModel PricingModel { get; private set; } = PricingModel.PerDay;
 
     public string? LicensePlate { get; private set; }
 
@@ -72,8 +85,9 @@ public class Car : TenantEntity
         string description,
         CarCategory category,
         int seats,
-        decimal dailyRate,
-        string? licensePlate = null)
+        decimal rate,
+        string? licensePlate = null,
+        PricingModel pricingModel = PricingModel.PerDay)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -85,9 +99,9 @@ public class Car : TenantEntity
             throw new DomainException("Seat count must be greater than zero.");
         }
 
-        if (dailyRate < 0)
+        if (rate < 0)
         {
-            throw new DomainException("Daily rate cannot be negative.");
+            throw new DomainException("Rate cannot be negative.");
         }
 
         return new Car(
@@ -95,7 +109,8 @@ public class Car : TenantEntity
             description?.Trim() ?? string.Empty,
             category,
             seats,
-            dailyRate,
+            rate,
+            pricingModel,
             licensePlate?.Trim());
     }
 
@@ -104,8 +119,9 @@ public class Car : TenantEntity
         string description,
         CarCategory category,
         int seats,
-        decimal dailyRate,
-        string? licensePlate)
+        decimal rate,
+        string? licensePlate,
+        PricingModel pricingModel = PricingModel.PerDay)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -117,16 +133,17 @@ public class Car : TenantEntity
             throw new DomainException("Seat count must be greater than zero.");
         }
 
-        if (dailyRate < 0)
+        if (rate < 0)
         {
-            throw new DomainException("Daily rate cannot be negative.");
+            throw new DomainException("Rate cannot be negative.");
         }
 
         Name = name.Trim();
         Description = description?.Trim() ?? string.Empty;
         Category = category;
         Seats = seats;
-        DailyRate = dailyRate;
+        Rate = rate;
+        PricingModel = pricingModel;
         LicensePlate = licensePlate?.Trim();
         Touch();
     }

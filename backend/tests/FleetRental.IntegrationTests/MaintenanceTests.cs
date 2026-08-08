@@ -201,6 +201,128 @@ public class MaintenanceTests(FleetRentalApiFactory factory) : IAsyncLifetime
         Assert.False(summary!.IsServiceDue);
     }
 
+    // ---------- Service catalog ----------
+
+    [Fact]
+    public async Task An_anonymous_caller_cannot_read_the_service_catalog()
+    {
+        var anonymous = factory.CreateTenantClient();
+        var response = await anonymous.GetServiceTypesAsync();
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_client_cannot_create_a_service_type()
+    {
+        var client = factory.CreateTenantClient();
+        await client.SignUpAndAuthenticateAsync("catalog-client@test.com");
+
+        var response = await client.CreateServiceTypeAsync("Oil change", 10_000);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_created_service_type_appears_in_the_catalog()
+    {
+        var (_, admin) = await SeedCarWithAdminAsync();
+
+        await admin.CreateServiceTypeAndGetIdAsync("Oil change", 10_000);
+
+        var types = await admin.GetAsync<ApiClient.ServiceTypeResult[]>("/api/service-types");
+
+        Assert.Single(types!);
+        Assert.Equal("Oil change", types![0].Name);
+        Assert.Equal(10_000, types[0].IntervalKm);
+        Assert.True(types[0].IsActive);
+    }
+
+    [Fact]
+    public async Task Deactivating_a_service_type_hides_it_from_the_default_catalog_list_but_not_the_full_one()
+    {
+        var (_, admin) = await SeedCarWithAdminAsync();
+        var typeId = await admin.CreateServiceTypeAndGetIdAsync("Tire rotation", 8_000);
+
+        Assert.Equal(HttpStatusCode.OK, (await admin.DeactivateServiceTypeAsync(typeId)).StatusCode);
+
+        var active = await admin.GetAsync<ApiClient.ServiceTypeResult[]>("/api/service-types");
+        Assert.Empty(active!);
+
+        var all = await admin.GetAsync<ApiClient.ServiceTypeResult[]>("/api/service-types?includeInactive=true");
+        Assert.Single(all!);
+        Assert.False(all![0].IsActive);
+    }
+
+    [Fact]
+    public async Task Reactivating_a_service_type_returns_it_to_the_default_catalog_list()
+    {
+        var (_, admin) = await SeedCarWithAdminAsync();
+        var typeId = await admin.CreateServiceTypeAndGetIdAsync("Tire rotation", 8_000);
+        await admin.DeactivateServiceTypeAsync(typeId);
+
+        await admin.ReactivateServiceTypeAsync(typeId);
+
+        var active = await admin.GetAsync<ApiClient.ServiceTypeResult[]>("/api/service-types");
+        Assert.Single(active!);
+    }
+
+    [Fact]
+    public async Task A_service_type_never_performed_on_a_car_shows_up_as_not_yet_done()
+    {
+        var (carId, admin) = await SeedCarWithAdminAsync();
+        await admin.CreateServiceTypeAndGetIdAsync("Oil change", 10_000);
+
+        var statuses = await admin.GetAsync<ApiClient.ServiceTypeStatusResult[]>($"/api/cars/{carId}/service-type-status");
+
+        Assert.Single(statuses!);
+        Assert.Equal("Oil change", statuses![0].ServiceTypeName);
+        Assert.Null(statuses[0].LastPerformedAt);
+        Assert.Null(statuses[0].KmSinceLastService);
+        Assert.False(statuses[0].IsDue);
+    }
+
+    [Fact]
+    public async Task Logging_a_catalog_service_tracks_km_since_independently_of_the_generic_interval()
+    {
+        var (carId, admin) = await SeedCarWithAdminAsync();
+        var oilChangeId = await admin.CreateServiceTypeAndGetIdAsync("Oil change", 10_000);
+
+        await admin.LogServiceAsync(
+            carId, new DateOnly(2026, 1, 1), "Oil and filter", 10_000, 100m, serviceTypeId: oilChangeId);
+        await admin.UpdateOdometerAsync(carId, 19_000); // 9,000 km since — not due yet
+
+        var statuses = await admin.GetAsync<ApiClient.ServiceTypeStatusResult[]>($"/api/cars/{carId}/service-type-status");
+        var oilChange = Array.Find(statuses!, s => s.ServiceTypeId == oilChangeId);
+
+        Assert.Equal(9_000, oilChange!.KmSinceLastService);
+        Assert.False(oilChange.IsDue);
+
+        // Logged service also links back from the record itself.
+        var history = await admin.GetAsync<ApiClient.ServiceRecordResult[]>($"/api/cars/{carId}/service-records");
+        Assert.Equal("Oil change", history![0].ServiceTypeName);
+    }
+
+    [Fact]
+    public async Task A_service_type_past_its_own_interval_is_flagged_due_independently_of_others()
+    {
+        var (carId, admin) = await SeedCarWithAdminAsync();
+        var oilChangeId = await admin.CreateServiceTypeAndGetIdAsync("Oil change", 10_000);
+        var tireRotationId = await admin.CreateServiceTypeAndGetIdAsync("Tire rotation", 20_000);
+
+        await admin.LogServiceAsync(
+            carId, new DateOnly(2026, 1, 1), "Oil and filter", 10_000, 100m, serviceTypeId: oilChangeId);
+        await admin.LogServiceAsync(
+            carId, new DateOnly(2026, 1, 1), "Tire rotation", 10_000, 80m, serviceTypeId: tireRotationId);
+        await admin.UpdateOdometerAsync(carId, 21_000); // 11,000 km since both
+
+        var statuses = await admin.GetAsync<ApiClient.ServiceTypeStatusResult[]>($"/api/cars/{carId}/service-type-status");
+        var oilChange = Array.Find(statuses!, s => s.ServiceTypeId == oilChangeId);
+        var tireRotation = Array.Find(statuses!, s => s.ServiceTypeId == tireRotationId);
+
+        Assert.True(oilChange!.IsDue); // 11,000 >= 10,000
+        Assert.False(tireRotation!.IsDue); // 11,000 < 20,000
+    }
+
     // ---------- Issues ----------
 
     [Fact]

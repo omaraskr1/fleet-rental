@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { CarsStore } from './cars.store';
 import { ApiService } from '../services/api.service';
-import type { CarAvailability, CarListItem } from '../models';
+import type { CarAvailability, CarDetail, CarListItem, CreateCarRequest } from '../models';
 
 function car(overrides: Partial<CarListItem> = {}): CarListItem {
   return {
@@ -10,7 +10,8 @@ function car(overrides: Partial<CarListItem> = {}): CarListItem {
     name: 'Test Car',
     category: 'Sedan',
     seats: 4,
-    dailyRate: 100,
+    rate: 100,
+    pricingModel: 'PerDay',
     status: 'Active',
     primaryPhotoUrl: null,
     availableToday: true,
@@ -23,11 +24,21 @@ describe('CarsStore', () => {
     getCars: ReturnType<typeof vi.fn>;
     getCar: ReturnType<typeof vi.fn>;
     getCarAvailability: ReturnType<typeof vi.fn>;
+    createCar: ReturnType<typeof vi.fn>;
+    updateCar: ReturnType<typeof vi.fn>;
+    retireCar: ReturnType<typeof vi.fn>;
   };
   let store: CarsStore;
 
   beforeEach(() => {
-    api = { getCars: vi.fn(), getCar: vi.fn(), getCarAvailability: vi.fn() };
+    api = {
+      getCars: vi.fn(),
+      getCar: vi.fn(),
+      getCarAvailability: vi.fn(),
+      createCar: vi.fn(),
+      updateCar: vi.fn(),
+      retireCar: vi.fn(),
+    };
 
     TestBed.configureTestingModule({ providers: [{ provide: ApiService, useValue: api }] });
     store = TestBed.inject(CarsStore);
@@ -155,5 +166,70 @@ describe('CarsStore', () => {
 
     expect(store.selected()).toBeNull();
     expect(store.availability()).toBeNull();
+  });
+
+  describe('admin mutations', () => {
+    const createRequest: CreateCarRequest = {
+      name: 'New Car',
+      description: '',
+      category: 'Sedan',
+      seats: 4,
+      rate: 150,
+      pricingModel: 'PerDay',
+    };
+
+    it('createCar reloads the list and returns the created car', async () => {
+      const created: CarDetail = {
+        id: 'new-id',
+        name: 'New Car',
+        description: '',
+        category: 'Sedan',
+        seats: 4,
+        rate: 150,
+        pricingModel: 'PerDay',
+        status: 'Active',
+        licensePlate: null,
+        photos: [],
+      };
+      api.createCar.mockResolvedValue(created);
+      api.getCars.mockResolvedValue([car({ id: 'new-id' })]);
+
+      const result = await store.createCar(createRequest);
+
+      expect(result).toEqual(created);
+      expect(store.cars().map((c) => c.id)).toEqual(['new-id']);
+      expect(store.loading()).toBe(false);
+    });
+
+    it('createCar surfaces the error and rethrows, leaving the list untouched', async () => {
+      api.createCar.mockRejectedValue(new Error('Name is required.'));
+      api.getCars.mockResolvedValue([]);
+      await store.loadCars();
+
+      await expect(store.createCar(createRequest)).rejects.toThrow('Name is required.');
+
+      expect(store.error()).toBe('Name is required.');
+      expect(api.getCars).toHaveBeenCalledTimes(1); // not reloaded after a failed create
+    });
+
+    it('updateCar reloads the list after a successful update', async () => {
+      api.updateCar.mockResolvedValue({ id: 'c1' });
+      api.getCars.mockResolvedValue([car({ id: 'c1', rate: 200 })]);
+
+      await store.updateCar('c1', { ...createRequest, name: 'Renamed' });
+
+      expect(api.updateCar).toHaveBeenCalledWith('c1', { ...createRequest, name: 'Renamed' });
+      expect(store.cars()[0].rate).toBe(200);
+    });
+
+    it('retireCar reloads the list after retiring', async () => {
+      api.retireCar.mockResolvedValue(undefined);
+      api.getCars.mockResolvedValue([car({ id: 'c1', status: 'Retired' })]);
+
+      await store.retireCar('c1');
+
+      expect(api.retireCar).toHaveBeenCalledWith('c1');
+      expect(store.cars()[0].status).toBe('Retired');
+    });
   });
 });

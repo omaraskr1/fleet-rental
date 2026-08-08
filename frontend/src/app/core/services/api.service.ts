@@ -30,6 +30,10 @@ import type {
   RevenueForecast,
   RevenuePoint,
   ServiceRecord,
+  ServiceType,
+  ServiceTypeStatus,
+  CreateServiceTypeRequest,
+  UpdateServiceTypeRequest,
   UpdateCarRequest,
   VehicleIssue,
   AppUser,
@@ -201,6 +205,35 @@ export class ApiService {
   setServiceInterval(carId: string, km: number | null): Promise<void> {
     return firstValueFrom(
       this.http.put<void>(`${this.base}/cars/${carId}/service-interval`, { km }),
+    );
+  }
+
+  // ---------- Service catalog ----------
+
+  getServiceTypes(includeInactive = false): Promise<ServiceType[]> {
+    const params = new HttpParams().set('includeInactive', includeInactive);
+    return firstValueFrom(this.http.get<ServiceType[]>(`${this.base}/service-types`, { params }));
+  }
+
+  createServiceType(request: CreateServiceTypeRequest): Promise<ServiceType> {
+    return firstValueFrom(this.http.post<ServiceType>(`${this.base}/service-types`, request));
+  }
+
+  updateServiceType(id: string, request: UpdateServiceTypeRequest): Promise<ServiceType> {
+    return firstValueFrom(this.http.put<ServiceType>(`${this.base}/service-types/${id}`, request));
+  }
+
+  deactivateServiceType(id: string): Promise<ServiceType> {
+    return firstValueFrom(this.http.post<ServiceType>(`${this.base}/service-types/${id}/deactivate`, {}));
+  }
+
+  reactivateServiceType(id: string): Promise<ServiceType> {
+    return firstValueFrom(this.http.post<ServiceType>(`${this.base}/service-types/${id}/reactivate`, {}));
+  }
+
+  getServiceTypeStatuses(carId: string): Promise<ServiceTypeStatus[]> {
+    return firstValueFrom(
+      this.http.get<ServiceTypeStatus[]>(`${this.base}/cars/${carId}/service-type-status`),
     );
   }
 

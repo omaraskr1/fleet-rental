@@ -44,6 +44,7 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
                 </ion-badge>
               }
             </a>
+            <a routerLink="services" routerLinkActive="active">{{ locale.t('admin.services.title') }}</a>
             <a routerLink="analytics" routerLinkActive="active">{{ locale.t('admin.analytics.title') }}</a>
           </nav>
 

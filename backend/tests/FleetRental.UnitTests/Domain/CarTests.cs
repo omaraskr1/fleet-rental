@@ -41,7 +41,32 @@ public class CarTests
     public void Create_allows_a_zero_rate_for_sponsored_vehicles()
     {
         var car = Car.Create("Sponsored", "d", CarCategory.Sedan, 4, 0m);
-        Assert.Equal(0m, car.DailyRate);
+        Assert.Equal(0m, car.Rate);
+    }
+
+    [Fact]
+    public void Create_defaults_to_per_day_pricing()
+    {
+        Assert.Equal(PricingModel.PerDay, NewCar().PricingModel);
+    }
+
+    [Fact]
+    public void Create_accepts_an_explicit_pricing_model()
+    {
+        var car = Car.Create("Roadshow Truck", "d", CarCategory.BrandedTruck, 3, 1500m,
+            pricingModel: PricingModel.PerEvent);
+
+        Assert.Equal(PricingModel.PerEvent, car.PricingModel);
+    }
+
+    [Fact]
+    public void UpdateDetails_changes_the_pricing_model()
+    {
+        var car = NewCar();
+
+        car.UpdateDetails("V-Class", "d", CarCategory.Van, 8, 320m, null, PricingModel.PerEvent);
+
+        Assert.Equal(PricingModel.PerEvent, car.PricingModel);
     }
 
     [Fact]

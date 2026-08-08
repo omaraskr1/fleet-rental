@@ -20,8 +20,20 @@ public class ServiceRecordConfiguration : IEntityTypeConfiguration<ServiceRecord
             .HasForeignKey(s => s.CarId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Nullable: not every record is a catalog service (e.g. one-off repairs),
+        // and a type is never hard-deleted, so this FK never needs to null itself
+        // out — Restrict, same posture as Car above.
+        builder.HasOne(s => s.ServiceType)
+            .WithMany()
+            .HasForeignKey(s => s.ServiceTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // The service-history screen and the next-due calculation both read
         // "most recent records for this car" first.
         builder.HasIndex(s => new { s.CarId, s.PerformedAt });
+
+        // The per-service due calculation reads "most recent record for this
+        // car and this service type."
+        builder.HasIndex(s => new { s.CarId, s.ServiceTypeId, s.PerformedAt });
     }
 }

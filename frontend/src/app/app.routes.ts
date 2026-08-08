@@ -109,6 +109,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-fleet.page').then((m) => m.AdminFleetPage),
       },
       {
+        path: 'fleet/new',
+        loadComponent: () =>
+          import('./features/admin/admin-car-form.page').then((m) => m.AdminCarFormPage),
+      },
+      {
+        path: 'fleet/:carId/edit',
+        loadComponent: () =>
+          import('./features/admin/admin-car-form.page').then((m) => m.AdminCarFormPage),
+      },
+      {
         path: 'fleet/:carId/maintenance',
         loadComponent: () =>
           import('./features/admin/admin-car-maintenance.page').then((m) => m.AdminCarMaintenancePage),
@@ -117,6 +127,11 @@ export const routes: Routes = [
         path: 'issues',
         loadComponent: () =>
           import('./features/admin/admin-issues.page').then((m) => m.AdminIssuesPage),
+      },
+      {
+        path: 'services',
+        loadComponent: () =>
+          import('./features/admin/admin-service-catalog.page').then((m) => m.AdminServiceCatalogPage),
       },
       {
         path: 'analytics',

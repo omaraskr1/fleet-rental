@@ -52,6 +52,7 @@
     "bookedToday": "محجوزة اليوم",
     "seats": "{{count}} مقاعد",
     "perDay": "/يوم",
+    "perEvent": "/فعالية",
     "noResults": "لا توجد مركبات في هذه الفئة.",
     "requestVehicle": "اطلب هذه المركبة",
     "notAvailable": "غير متاحة للحجز حاليًا",
@@ -173,12 +174,31 @@
       "vehicle": "المركبة",
       "category": "الفئة",
       "seats": "المقاعد",
-      "dailyRate": "السعر اليومي",
+      "rate": "السعر",
       "status": "الحالة",
       "today": "اليوم",
       "free": "متاحة",
       "booked": "محجوزة",
-      "maintenanceLink": "الصيانة"
+      "maintenanceLink": "الصيانة",
+      "addVehicle": "إضافة مركبة",
+      "edit": "تعديل",
+      "retire": "سحب من الخدمة",
+      "retireConfirm": "سحب هذه المركبة من الخدمة؟",
+      "retireConfirmButton": "تأكيد السحب",
+      "form": {
+        "addTitle": "إضافة مركبة",
+        "editTitle": "تعديل المركبة",
+        "name": "الاسم",
+        "description": "الوصف",
+        "rate": "السعر",
+        "pricingModel": "نظام التسعير",
+        "pricingModelOption": {
+          "PerDay": "لكل يوم",
+          "PerEvent": "لكل فعالية"
+        },
+        "licensePlateOptional": "لوحة الترخيص (اختياري)",
+        "save": "حفظ"
+      }
     },
     "maintenance": {
       "title": "الصيانة",
@@ -210,7 +230,26 @@
       "issueDescriptionPlaceholder": "التكييف لا يبرّد",
       "severity": "الخطورة",
       "submitIssue": "الإبلاغ عن العطل",
-      "noIssues": "لا توجد أعطال مسجَّلة."
+      "noIssues": "لا توجد أعطال مسجَّلة.",
+      "serviceDue": "الصيانات المستحقة",
+      "serviceDueEmpty": "لا توجد خدمات معرَّفة بعد — أضف واحدة من صفحة الخدمات.",
+      "notYetPerformed": "لم تُنفَّذ بعد",
+      "kmSince": "{{km}} كم منذ آخر مرة",
+      "serviceType": "نوع الخدمة",
+      "serviceTypeNone": "بدون (نص حر فقط)"
+    },
+    "services": {
+      "title": "الخدمات",
+      "add": "إضافة خدمة",
+      "name": "الاسم",
+      "namePlaceholder": "تغيير الزيت",
+      "intervalKm": "الفاصل الزمني (كم)",
+      "every": "كل {{km}} كم",
+      "active": "نشطة",
+      "inactive": "غير نشطة",
+      "deactivate": "إلغاء التفعيل",
+      "reactivate": "إعادة التفعيل",
+      "empty": "لا توجد أنواع خدمات بعد — أضف أول واحدة أعلاه."
     },
     "issues": {
       "title": "أعطال المركبات",
@@ -244,7 +283,7 @@
       "utilizationByCar": "معدل الاستخدام حسب المركبة",
       "demandByEventType": "الطلب حسب نوع الفعالية",
       "profitability": "الربح حسب المركبة",
-      "profitabilityNote": "الإيراد تقديري بناءً على السعر اليومي × أيام الحجز؛ تكلفة الصيانة وحدها هي إنفاق فعلي.",
+      "profitabilityNote": "الإيراد تقديري بناءً على سعر كل مركبة (لكل يوم × أيام الحجز، أو مرة واحدة لكل فعالية)؛ تكلفة الصيانة وحدها هي إنفاق فعلي.",
       "vehicle": "المركبة",
       "revenue": "الإيراد",
       "cost": "الصيانة",

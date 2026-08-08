@@ -168,14 +168,16 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         Guid? tenantId = null,
         string name = "Test Car",
         CarStatus status = CarStatus.Active,
-        CarCategory category = CarCategory.Van)
+        CarCategory category = CarCategory.Van,
+        decimal rate = 300m,
+        PricingModel pricingModel = PricingModel.PerDay)
     {
         var tenant = tenantId ?? await SeedTenantAsync();
         Guid carId = Guid.Empty;
 
         await InTenantScopeAsync(tenant, (db, _) =>
         {
-            var car = Car.Create(name, "Seeded for tests", category, 8, 300m);
+            var car = Car.Create(name, "Seeded for tests", category, 8, rate, pricingModel: pricingModel);
             car.AddPhoto("https://example.com/car.jpg", name, isPrimary: true);
 
             if (status != CarStatus.Active)

@@ -1,11 +1,14 @@
-tasks for EventDrive system
--publish this project on github
+tasks for fleet rental system
 
--try to make dev and test and uat and prod enviroments
+DONE:
+
+-publish this project on GitHub
+
+-try to make dev and test and uat and prod environments
 
 -unit tests for all the system 
 and integrations test
-and any tests that always make me sure when i change that the system hasnot bugs and help for gab that i don't has tester
+and any tests that always make me sure when i change that the system hasn't bugs and help for gab that i don't has tester
 
 -add machine learning and datamining that help the user in analysis and dashboard and monitor his system
 
@@ -13,18 +16,30 @@ and any tests that always make me sure when i change that the system hasnot bugs
 
 -system support more then client for me as system i don't know how could we do think but i think concept of multi tenant will help us
 
-- we should have two weidget
+- we should have two widget
 one for user to booking 
 one for the owners of cars to check booking on it and insights and if there is any issue in car or mechanical should do
-and this will take us to module about mickanical of car and logs of it and insights on it and service time 
+and this will take us to module about mechanical of car and logs of it and insights on it and service time 
 
 
-- localization serive (arabic-english)
+- localization service (Arabic English)
 
 - i want the theme to be light and dark
 
----------------------
-
 - i want module for the admins of cars to track there inputs of money and outputs to see the profit of them
+---------------------
+TO DO:
+
+-i want module for user to add and deleted and edit for his cars, what about if the user want to edit price of car and if the price is by day or by event
+
+-there should be entity for services as example user should create in first the services like oil change and say that these should be each 10000 kilo then he in the maintain when say that he change oil to this car then we count 10000 kilo for this car and there will be tap to each car to make know the user how many kilo meters then should make each service he has created
+
+-hide for now page of select company i will work on one customer but i want to make module for me as administrator to add company or add admins that they are working in company and add and edit and delete cars and monitor them
+
+-want to make page for me to open features and close for each company
+
+-want to make plane for me to know all the costs that i will need to make this project published to production
+
+-i want generated marketing video i can show to the user and describe to him my idea and the project to sell it to him
 
 -the cars has gps and i want to make the owners of cars track them using gps to see where it is

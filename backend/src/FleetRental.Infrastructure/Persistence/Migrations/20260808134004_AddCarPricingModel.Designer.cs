@@ -5,6 +5,7 @@ using FleetRental.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FleetRental.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(FleetRentalDbContext))]
-    partial class FleetRentalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808134004_AddCarPricingModel")]
+    partial class AddCarPricingModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -348,9 +351,6 @@ namespace FleetRental.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid?>("ServiceTypeId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -358,46 +358,10 @@ namespace FleetRental.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ServiceTypeId");
 
                     b.HasIndex("CarId", "PerformedAt");
 
-                    b.HasIndex("CarId", "ServiceTypeId", "PerformedAt");
-
                     b.ToTable("ServiceRecords", (string)null);
-                });
-
-            modelBuilder.Entity("FleetRental.Domain.Entities.ServiceType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("IntervalKm")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "IsActive");
-
-                    b.ToTable("ServiceTypes", (string)null);
                 });
 
             modelBuilder.Entity("FleetRental.Domain.Entities.Tenant", b =>
@@ -632,14 +596,7 @@ namespace FleetRental.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("FleetRental.Domain.Entities.ServiceType", "ServiceType")
-                        .WithMany()
-                        .HasForeignKey("ServiceTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Car");
-
-                    b.Navigation("ServiceType");
                 });
 
             modelBuilder.Entity("FleetRental.Domain.Entities.VehicleIssue", b =>

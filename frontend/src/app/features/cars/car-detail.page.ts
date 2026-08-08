@@ -42,7 +42,7 @@ import { LocaleStore } from '../../core/stores/locale.store';
             </div>
             <p class="meta">
               {{ categoryLabel(detail.category) }} · {{ locale.t('cars.seats', { count: detail.seats }) }} ·
-              <strong>{{ detail.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ locale.t('cars.perDay') }}</strong>
+              <strong>{{ detail.rate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ priceSuffix(detail.pricingModel) }}</strong>
             </p>
             @if (detail.description) {
               <p>{{ detail.description }}</p>
@@ -116,6 +116,10 @@ export class CarDetailPage implements OnInit {
       default:
         return value;
     }
+  }
+
+  protected priceSuffix(pricingModel: string): string {
+    return pricingModel === 'PerEvent' ? this.locale.t('cars.perEvent') : this.locale.t('cars.perDay');
   }
 
   protected book(): void {

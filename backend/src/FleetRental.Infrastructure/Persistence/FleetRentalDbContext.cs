@@ -49,6 +49,8 @@ public class FleetRentalDbContext(
 
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
 
+    public DbSet<ServiceType> ServiceTypes => Set<ServiceType>();
+
     public DbSet<VehicleIssue> VehicleIssues => Set<VehicleIssue>();
 
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();

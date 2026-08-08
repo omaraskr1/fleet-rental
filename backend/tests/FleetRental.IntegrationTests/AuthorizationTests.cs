@@ -149,7 +149,8 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
             description = "x",
             category = "Sedan",
             seats = 4,
-            dailyRate = 100,
+            rate = 100,
+            pricingModel = "PerDay",
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

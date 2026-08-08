@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { MaintenanceStore } from './maintenance.store';
 import { ApiService } from '../services/api.service';
-import type { CarMaintenanceSummary, ServiceRecord, VehicleIssue } from '../models';
+import type { CarMaintenanceSummary, ServiceRecord, ServiceType, VehicleIssue } from '../models';
 
 function summary(overrides: Partial<CarMaintenanceSummary> = {}): CarMaintenanceSummary {
   return {
@@ -28,6 +28,18 @@ function record(overrides: Partial<ServiceRecord> = {}): ServiceRecord {
     odometerKm: 30_000,
     cost: 200,
     performedBy: 'Test Garage',
+    serviceTypeId: null,
+    serviceTypeName: null,
+    ...overrides,
+  };
+}
+
+function serviceType(overrides: Partial<ServiceType> = {}): ServiceType {
+  return {
+    id: 'st1',
+    name: 'Oil change',
+    intervalKm: 10_000,
+    isActive: true,
     ...overrides,
   };
 }
@@ -60,6 +72,12 @@ describe('MaintenanceStore', () => {
     startIssueProgress: ReturnType<typeof vi.fn>;
     resolveIssue: ReturnType<typeof vi.fn>;
     reopenIssue: ReturnType<typeof vi.fn>;
+    getServiceTypes: ReturnType<typeof vi.fn>;
+    createServiceType: ReturnType<typeof vi.fn>;
+    updateServiceType: ReturnType<typeof vi.fn>;
+    deactivateServiceType: ReturnType<typeof vi.fn>;
+    reactivateServiceType: ReturnType<typeof vi.fn>;
+    getServiceTypeStatuses: ReturnType<typeof vi.fn>;
   };
   let store: MaintenanceStore;
 
@@ -75,6 +93,12 @@ describe('MaintenanceStore', () => {
       startIssueProgress: vi.fn(),
       resolveIssue: vi.fn(),
       reopenIssue: vi.fn(),
+      getServiceTypes: vi.fn(),
+      createServiceType: vi.fn(),
+      updateServiceType: vi.fn(),
+      deactivateServiceType: vi.fn(),
+      reactivateServiceType: vi.fn(),
+      getServiceTypeStatuses: vi.fn(),
     };
 
     TestBed.configureTestingModule({ providers: [{ provide: ApiService, useValue: api }] });
@@ -257,6 +281,74 @@ describe('MaintenanceStore', () => {
 
       await expect(store.startProgress('i1')).rejects.toThrow('in-progress');
       expect(store.error()).toBe('Only an open issue can move to in-progress.');
+    });
+  });
+
+  describe('service catalog', () => {
+    it('loadServiceTypes populates the list', async () => {
+      api.getServiceTypes.mockResolvedValue([serviceType()]);
+      await store.loadServiceTypes();
+      expect(store.serviceTypes()).toEqual([serviceType()]);
+    });
+
+    it('createServiceType appends the new type', async () => {
+      api.getServiceTypes.mockResolvedValue([serviceType({ id: 'existing' })]);
+      await store.loadServiceTypes();
+
+      const created = serviceType({ id: 'new-type', name: 'Tire rotation', intervalKm: 8_000 });
+      api.createServiceType.mockResolvedValue(created);
+
+      await store.createServiceType({ name: 'Tire rotation', intervalKm: 8_000 });
+
+      expect(store.serviceTypes().map((t) => t.id)).toEqual(['existing', 'new-type']);
+    });
+
+    it('updateServiceType replaces the matching entry', async () => {
+      api.getServiceTypes.mockResolvedValue([serviceType({ id: 'st1', intervalKm: 10_000 })]);
+      await store.loadServiceTypes();
+
+      api.updateServiceType.mockResolvedValue(serviceType({ id: 'st1', intervalKm: 12_000 }));
+      await store.updateServiceType('st1', { name: 'Oil change', intervalKm: 12_000 });
+
+      expect(store.serviceTypes()[0].intervalKm).toBe(12_000);
+    });
+
+    it('deactivateServiceType and reactivateServiceType update the entry in place', async () => {
+      api.getServiceTypes.mockResolvedValue([serviceType({ id: 'st1', isActive: true })]);
+      await store.loadServiceTypes();
+
+      api.deactivateServiceType.mockResolvedValue(serviceType({ id: 'st1', isActive: false }));
+      await store.deactivateServiceType('st1');
+      expect(store.serviceTypes()[0].isActive).toBe(false);
+
+      api.reactivateServiceType.mockResolvedValue(serviceType({ id: 'st1', isActive: true }));
+      await store.reactivateServiceType('st1');
+      expect(store.serviceTypes()[0].isActive).toBe(true);
+    });
+
+    it('loadServiceTypeStatuses populates the per-car breakdown', async () => {
+      const status = {
+        serviceTypeId: 'st1',
+        serviceTypeName: 'Oil change',
+        intervalKm: 10_000,
+        lastPerformedAt: '2026-01-01',
+        kmSinceLastService: 5_000,
+        isDue: false,
+      };
+      api.getServiceTypeStatuses.mockResolvedValue([status]);
+
+      await store.loadServiceTypeStatuses('c1');
+
+      expect(store.serviceTypeStatuses()).toEqual([status]);
+    });
+
+    it('a failed mutation rethrows and records the error', async () => {
+      api.createServiceType.mockRejectedValue(new Error('Service name is required.'));
+
+      await expect(store.createServiceType({ name: '', intervalKm: 10_000 })).rejects.toThrow(
+        'Service name is required.',
+      );
+      expect(store.error()).toBe('Service name is required.');
     });
   });
 

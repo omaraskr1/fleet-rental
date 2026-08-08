@@ -16,6 +16,8 @@ export type CarCategory =
 
 export type CarStatus = 'Active' | 'Maintenance' | 'Retired';
 
+export type PricingModel = 'PerDay' | 'PerEvent';
+
 export type BookingStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
 
 export type UserRole = 'Client' | 'Admin';
@@ -40,7 +42,8 @@ export interface CarListItem {
   name: string;
   category: CarCategory;
   seats: number;
-  dailyRate: number;
+  rate: number;
+  pricingModel: PricingModel;
   status: CarStatus;
   primaryPhotoUrl: string | null;
   availableToday: boolean;
@@ -59,7 +62,8 @@ export interface CarDetail {
   description: string;
   category: CarCategory;
   seats: number;
-  dailyRate: number;
+  rate: number;
+  pricingModel: PricingModel;
   status: CarStatus;
   licensePlate: string | null;
   photos: CarPhoto[];
@@ -150,7 +154,8 @@ export interface CreateCarRequest {
   description: string;
   category: CarCategory;
   seats: number;
-  dailyRate: number;
+  rate: number;
+  pricingModel: PricingModel;
   licensePlate?: string | null;
   photoUrls?: string[];
 }
@@ -177,6 +182,8 @@ export const CAR_CATEGORIES: CarCategory[] = [
   'BrandedTruck',
   'Bus',
 ];
+
+export const PRICING_MODELS: PricingModel[] = ['PerDay', 'PerEvent'];
 
 export const EVENT_TYPES: EventType[] = [
   'ProductLaunch',
@@ -205,6 +212,8 @@ export interface ServiceRecord {
   odometerKm: number | null;
   cost: number;
   performedBy: string | null;
+  serviceTypeId: string | null;
+  serviceTypeName: string | null;
 }
 
 export interface LogServiceRequest {
@@ -213,6 +222,35 @@ export interface LogServiceRequest {
   odometerKm: number | null;
   cost: number;
   performedBy?: string | null;
+  serviceTypeId?: string | null;
+}
+
+/** A fleet-wide catalog entry — "Oil change every 10,000 km" — shared across every car. */
+export interface ServiceType {
+  id: string;
+  name: string;
+  intervalKm: number;
+  isActive: boolean;
+}
+
+export interface CreateServiceTypeRequest {
+  name: string;
+  intervalKm: number;
+}
+
+export interface UpdateServiceTypeRequest {
+  name: string;
+  intervalKm: number;
+}
+
+/** Km-until-due for one service type, on one car. */
+export interface ServiceTypeStatus {
+  serviceTypeId: string;
+  serviceTypeName: string;
+  intervalKm: number;
+  lastPerformedAt: IsoDate | null;
+  kmSinceLastService: number | null;
+  isDue: boolean;
 }
 
 export interface VehicleIssue {
@@ -248,7 +286,7 @@ export interface CarMaintenanceSummary {
 // ---------- Analytics ----------
 
 /**
- * Every revenue figure here is estimated as Car.DailyRate x booked days —
+ * Every revenue figure here is estimated from Car.rate per its pricingModel —
  * Phase 1 takes no payment, so there is no billed amount to report instead.
  */
 export interface AnalyticsOverview {
@@ -323,7 +361,7 @@ export interface MaintenanceCostPoint {
 export type CarProfitabilityRecommendation = 'Keep' | 'Review' | 'ConsiderRetiring';
 
 /**
- * Revenue here is still the DailyRate x booked days estimate, so "profit" is
+ * Revenue here is still the rate/pricingModel-based estimate, so "profit" is
  * directional — useful for ranking cars against each other, not for the books.
  * Only maintenanceCost is real money.
  */

@@ -17,9 +17,10 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
 
         builder.Property(c => c.Category).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(c => c.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        builder.Property(c => c.PricingModel).HasConversion<string>().HasMaxLength(16).IsRequired();
 
         // Money: exact decimal, never float.
-        builder.Property(c => c.DailyRate).HasPrecision(18, 2);
+        builder.Property(c => c.Rate).HasPrecision(18, 2);
 
         // The listing screen filters on status, so index it.
         builder.HasIndex(c => c.Status);

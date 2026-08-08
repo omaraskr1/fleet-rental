@@ -61,8 +61,9 @@ public class CarService(IFleetRentalDbContext db)
             request.Description,
             request.Category,
             request.Seats,
-            request.DailyRate,
-            request.LicensePlate);
+            request.Rate,
+            request.LicensePlate,
+            request.PricingModel);
 
         foreach (var url in request.PhotoUrls)
         {
@@ -90,8 +91,9 @@ public class CarService(IFleetRentalDbContext db)
             request.Description,
             request.Category,
             request.Seats,
-            request.DailyRate,
-            request.LicensePlate);
+            request.Rate,
+            request.LicensePlate,
+            request.PricingModel);
 
         if (request.Status is { } status)
         {

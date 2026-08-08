@@ -24,7 +24,8 @@ public class ServiceRecord : TenantEntity
         string description,
         int? odometerKm,
         decimal cost,
-        string? performedBy)
+        string? performedBy,
+        Guid? serviceTypeId)
     {
         CarId = carId;
         PerformedAt = performedAt;
@@ -32,11 +33,21 @@ public class ServiceRecord : TenantEntity
         OdometerKm = odometerKm;
         Cost = cost;
         PerformedBy = performedBy;
+        ServiceTypeId = serviceTypeId;
     }
 
     public Guid CarId { get; private set; }
 
     public Car Car { get; private set; } = null!;
+
+    /// <summary>
+    /// Which catalog entry this was, if any — null for a one-off that isn't a
+    /// recurring service (e.g. "windscreen chip repair"). What the per-service
+    /// due calculation anchors on when present.
+    /// </summary>
+    public Guid? ServiceTypeId { get; private set; }
+
+    public ServiceType? ServiceType { get; private set; }
 
     public DateOnly PerformedAt { get; private set; }
 
@@ -61,7 +72,8 @@ public class ServiceRecord : TenantEntity
         string description,
         int? odometerKm,
         decimal cost,
-        string? performedBy = null)
+        string? performedBy = null,
+        Guid? serviceTypeId = null)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
@@ -86,6 +98,7 @@ public class ServiceRecord : TenantEntity
             throw new DomainException("Service date cannot be in the future.");
         }
 
-        return new ServiceRecord(carId, performedAt, description.Trim(), odometerKm, cost, performedBy?.Trim());
+        return new ServiceRecord(
+            carId, performedAt, description.Trim(), odometerKm, cost, performedBy?.Trim(), serviceTypeId);
     }
 }

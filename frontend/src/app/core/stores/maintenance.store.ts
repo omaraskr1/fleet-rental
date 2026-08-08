@@ -3,10 +3,14 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import type {
   CarMaintenanceSummary,
+  CreateServiceTypeRequest,
   IssueStatus,
   LogServiceRequest,
   ReportIssueRequest,
   ServiceRecord,
+  ServiceType,
+  ServiceTypeStatus,
+  UpdateServiceTypeRequest,
   VehicleIssue,
 } from '../models';
 
@@ -22,6 +26,8 @@ export class MaintenanceStore {
   private readonly _summary = signal<CarMaintenanceSummary | null>(null);
   private readonly _history = signal<ServiceRecord[]>([]);
   private readonly _issues = signal<VehicleIssue[]>([]);
+  private readonly _serviceTypes = signal<ServiceType[]>([]);
+  private readonly _serviceTypeStatuses = signal<ServiceTypeStatus[]>([]);
   private readonly _loading = signal(false);
   private readonly _submitting = signal(false);
   private readonly _error = signal<string | null>(null);
@@ -29,6 +35,8 @@ export class MaintenanceStore {
   readonly summary = this._summary.asReadonly();
   readonly history = this._history.asReadonly();
   readonly issues = this._issues.asReadonly();
+  readonly serviceTypes = this._serviceTypes.asReadonly();
+  readonly serviceTypeStatuses = this._serviceTypeStatuses.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly submitting = this._submitting.asReadonly();
   readonly error = this._error.asReadonly();
@@ -117,6 +125,84 @@ export class MaintenanceStore {
     try {
       await this.api.setServiceInterval(carId, km);
       await this.loadSummary(carId);
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._submitting.set(false);
+    }
+  }
+
+  /** Fleet-wide service catalog (feature: named services with per-service odometer tracking). */
+
+  async loadServiceTypes(includeInactive = false): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      this._serviceTypes.set(await this.api.getServiceTypes(includeInactive));
+    } catch (error) {
+      this._error.set((error as Error).message);
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async createServiceType(request: CreateServiceTypeRequest): Promise<void> {
+    this._submitting.set(true);
+    this._error.set(null);
+
+    try {
+      const created = await this.api.createServiceType(request);
+      this._serviceTypes.update((list) => [...list, created]);
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._submitting.set(false);
+    }
+  }
+
+  async updateServiceType(id: string, request: UpdateServiceTypeRequest): Promise<void> {
+    this._submitting.set(true);
+    this._error.set(null);
+
+    try {
+      const updated = await this.api.updateServiceType(id, request);
+      this._serviceTypes.update((list) => list.map((t) => (t.id === id ? updated : t)));
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._submitting.set(false);
+    }
+  }
+
+  async deactivateServiceType(id: string): Promise<void> {
+    await this.setServiceTypeActive(id, () => this.api.deactivateServiceType(id));
+  }
+
+  async reactivateServiceType(id: string): Promise<void> {
+    await this.setServiceTypeActive(id, () => this.api.reactivateServiceType(id));
+  }
+
+  async loadServiceTypeStatuses(carId: string): Promise<void> {
+    this._error.set(null);
+
+    try {
+      this._serviceTypeStatuses.set(await this.api.getServiceTypeStatuses(carId));
+    } catch (error) {
+      this._error.set((error as Error).message);
+    }
+  }
+
+  private async setServiceTypeActive(id: string, operation: () => Promise<ServiceType>): Promise<void> {
+    this._submitting.set(true);
+    this._error.set(null);
+
+    try {
+      const updated = await operation();
+      this._serviceTypes.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (error) {
       this._error.set((error as Error).message);
       throw error;

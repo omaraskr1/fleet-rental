@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { IonBadge, IonButton, IonNote, IonSpinner } from '@ionic/angular/standalone';
@@ -7,16 +7,21 @@ import { CarsStore } from '../../core/stores/cars.store';
 import { LocaleStore } from '../../core/stores/locale.store';
 
 /**
- * Read-only fleet overview. Vehicle create/edit is deliberately out of Phase 1
- * scope — the API endpoints exist (POST/PUT /api/cars) and are admin-guarded,
- * so the management UI is additive rather than a rewrite.
+ * Fleet overview, plus add/edit/retire. Create/edit/retire route to their own
+ * pages (`admin-car-form.page.ts`) rather than an inline form here, matching
+ * how maintenance already gets its own page per car.
  */
 @Component({
   selector: 'app-admin-fleet',
   imports: [IonBadge, IonButton, IonSpinner, IonNote, CurrencyPipe],
   template: `
-    <h1>{{ locale.t('admin.fleet.title') }}</h1>
-    <ion-note>{{ locale.t('admin.fleet.freeToday', { free: store.availableCount(), total: store.cars().length }) }}</ion-note>
+    <div class="header">
+      <div>
+        <h1>{{ locale.t('admin.fleet.title') }}</h1>
+        <ion-note>{{ locale.t('admin.fleet.freeToday', { free: store.availableCount(), total: store.cars().length }) }}</ion-note>
+      </div>
+      <ion-button size="small" (click)="addVehicle()">{{ locale.t('admin.fleet.addVehicle') }}</ion-button>
+    </div>
 
     @if (store.loading() && store.cars().length === 0) {
       <div class="state"><ion-spinner /></div>
@@ -28,7 +33,7 @@ import { LocaleStore } from '../../core/stores/locale.store';
               <th>{{ locale.t('admin.fleet.vehicle') }}</th>
               <th>{{ locale.t('admin.fleet.category') }}</th>
               <th>{{ locale.t('admin.fleet.seats') }}</th>
-              <th>{{ locale.t('admin.fleet.dailyRate') }}</th>
+              <th>{{ locale.t('admin.fleet.rate') }}</th>
               <th>{{ locale.t('admin.fleet.status') }}</th>
               <th>{{ locale.t('admin.fleet.today') }}</th>
               <th></th>
@@ -40,7 +45,9 @@ import { LocaleStore } from '../../core/stores/locale.store';
                 <td class="name">{{ car.name }}</td>
                 <td>{{ categoryLabel(car.category) }}</td>
                 <td>{{ car.seats }}</td>
-                <td>{{ car.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}</td>
+                <td>
+                  {{ car.rate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ priceSuffix(car.pricingModel) }}
+                </td>
                 <td>
                   <ion-badge [color]="car.status === 'Active' ? 'success' : 'medium'">
                     {{ statusLabel(car.status) }}
@@ -51,10 +58,30 @@ import { LocaleStore } from '../../core/stores/locale.store';
                     {{ car.availableToday ? locale.t('admin.fleet.free') : locale.t('admin.fleet.booked') }}
                   </ion-badge>
                 </td>
-                <td>
-                  <ion-button size="small" fill="clear" (click)="openMaintenance(car.id)">
-                    {{ locale.t('admin.fleet.maintenanceLink') }}
-                  </ion-button>
+                <td class="actions">
+                  @if (retiringId() === car.id) {
+                    <span class="confirm">
+                      {{ locale.t('admin.fleet.retireConfirm') }}
+                      <ion-button size="small" color="danger" (click)="confirmRetire(car.id)">
+                        {{ locale.t('admin.fleet.retireConfirmButton') }}
+                      </ion-button>
+                      <ion-button size="small" fill="clear" (click)="retiringId.set(null)">
+                        {{ locale.t('common.cancel') }}
+                      </ion-button>
+                    </span>
+                  } @else {
+                    <ion-button size="small" fill="clear" (click)="editVehicle(car.id)">
+                      {{ locale.t('admin.fleet.edit') }}
+                    </ion-button>
+                    <ion-button size="small" fill="clear" (click)="openMaintenance(car.id)">
+                      {{ locale.t('admin.fleet.maintenanceLink') }}
+                    </ion-button>
+                    @if (car.status !== 'Retired') {
+                      <ion-button size="small" fill="clear" color="danger" (click)="retiringId.set(car.id)">
+                        {{ locale.t('admin.fleet.retire') }}
+                      </ion-button>
+                    }
+                  }
                 </td>
               </tr>
             }
@@ -62,8 +89,13 @@ import { LocaleStore } from '../../core/stores/locale.store';
         </table>
       </div>
     }
+
+    @if (store.error(); as error) {
+      <ion-note color="danger" class="banner">{{ error }}</ion-note>
+    }
   `,
   styles: `
+    .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     h1 { font-size: 1.4rem; margin: 0 0 4px; }
     .scroller { overflow-x: auto; margin-top: 20px; }
     table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
@@ -72,13 +104,18 @@ import { LocaleStore } from '../../core/stores/locale.store';
     td { padding-block: 10px; padding-inline-end: 12px;
          border-top: 1px solid var(--ion-color-light-shade); white-space: nowrap; }
     td.name { font-weight: 500; }
+    td.actions { display: flex; gap: 4px; align-items: center; }
+    .confirm { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--ion-color-medium); }
     .state { padding: 48px; text-align: center; }
+    .banner { display: block; padding: 8px 0; white-space: pre-line; }
   `,
 })
 export class AdminFleetPage implements OnInit {
   protected readonly store = inject(CarsStore);
   protected readonly locale = inject(LocaleStore);
   private readonly router = inject(Router);
+
+  protected readonly retiringId = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.store.loadCars();
@@ -101,7 +138,24 @@ export class AdminFleetPage implements OnInit {
     }
   }
 
+  protected priceSuffix(pricingModel: string): string {
+    return pricingModel === 'PerEvent' ? this.locale.t('cars.perEvent') : this.locale.t('cars.perDay');
+  }
+
+  protected addVehicle(): void {
+    void this.router.navigate(['/admin/fleet/new']);
+  }
+
+  protected editVehicle(carId: string): void {
+    void this.router.navigate(['/admin/fleet', carId, 'edit']);
+  }
+
   protected openMaintenance(carId: string): void {
     void this.router.navigate(['/admin/fleet', carId, 'maintenance']);
+  }
+
+  protected async confirmRetire(carId: string): Promise<void> {
+    await this.store.retireCar(carId);
+    this.retiringId.set(null);
   }
 }

@@ -14,7 +14,9 @@ public sealed record CarListItemDto
 
     public required int Seats { get; init; }
 
-    public required decimal DailyRate { get; init; }
+    public required decimal Rate { get; init; }
+
+    public required string PricingModel { get; init; }
 
     public required string Status { get; init; }
 
@@ -32,7 +34,8 @@ public sealed record CarListItemDto
         Name = car.Name,
         Category = car.Category.ToString(),
         Seats = car.Seats,
-        DailyRate = car.DailyRate,
+        Rate = car.Rate,
+        PricingModel = car.PricingModel.ToString(),
         Status = car.Status.ToString(),
         PrimaryPhotoUrl = car.PrimaryPhoto?.Url,
         AvailableToday = availableToday,
@@ -52,7 +55,9 @@ public sealed record CarDetailDto
 
     public required int Seats { get; init; }
 
-    public required decimal DailyRate { get; init; }
+    public required decimal Rate { get; init; }
+
+    public required string PricingModel { get; init; }
 
     public required string Status { get; init; }
 
@@ -67,7 +72,8 @@ public sealed record CarDetailDto
         Description = car.Description,
         Category = car.Category.ToString(),
         Seats = car.Seats,
-        DailyRate = car.DailyRate,
+        Rate = car.Rate,
+        PricingModel = car.PricingModel.ToString(),
         Status = car.Status.ToString(),
         LicensePlate = car.LicensePlate,
         Photos = [.. car.Photos
@@ -106,7 +112,9 @@ public sealed record CreateCarRequest
 
     public required int Seats { get; init; }
 
-    public required decimal DailyRate { get; init; }
+    public required decimal Rate { get; init; }
+
+    public PricingModel PricingModel { get; init; } = PricingModel.PerDay;
 
     public string? LicensePlate { get; init; }
 
@@ -123,7 +131,9 @@ public sealed record UpdateCarRequest
 
     public required int Seats { get; init; }
 
-    public required decimal DailyRate { get; init; }
+    public required decimal Rate { get; init; }
+
+    public PricingModel PricingModel { get; init; } = PricingModel.PerDay;
 
     public string? LicensePlate { get; init; }
 

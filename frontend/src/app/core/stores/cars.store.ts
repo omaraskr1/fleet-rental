@@ -1,7 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { ApiService } from '../services/api.service';
-import type { CarAvailability, CarCategory, CarDetail, CarListItem } from '../models';
+import type {
+  CarAvailability,
+  CarCategory,
+  CarDetail,
+  CarListItem,
+  CreateCarRequest,
+  UpdateCarRequest,
+} from '../models';
 
 /**
  * Fleet browse state (features 1 and 2).
@@ -84,5 +91,54 @@ export class CarsStore {
   clearSelection(): void {
     this._selected.set(null);
     this._availability.set(null);
+  }
+
+  /** Admin fleet management (feature: car add/edit/retire). */
+
+  async createCar(request: CreateCarRequest): Promise<CarDetail> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const created = await this.api.createCar(request);
+      await this.loadCars();
+      return created;
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async updateCar(id: string, request: UpdateCarRequest): Promise<CarDetail> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const updated = await this.api.updateCar(id, request);
+      await this.loadCars();
+      return updated;
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async retireCar(id: string): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      await this.api.retireCar(id);
+      await this.loadCars();
+    } catch (error) {
+      this._error.set((error as Error).message);
+      throw error;
+    } finally {
+      this._loading.set(false);
+    }
   }
 }

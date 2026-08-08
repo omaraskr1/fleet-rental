@@ -54,6 +54,46 @@ public class MaintenanceController(MaintenanceService maintenance) : ControllerB
         return NoContent();
     }
 
+    // ---------- Service catalog ----------
+
+    [HttpGet("/api/service-types")]
+    [ProducesResponseType<IReadOnlyList<ServiceTypeDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ServiceTypeDto>>> GetServiceTypes(
+        [FromQuery] bool includeInactive, CancellationToken ct) =>
+        Ok(await maintenance.GetServiceTypesAsync(includeInactive, ct));
+
+    [HttpPost("/api/service-types")]
+    [ProducesResponseType<ServiceTypeDto>(StatusCodes.Status201Created)]
+    public async Task<ActionResult<ServiceTypeDto>> CreateServiceType(CreateServiceTypeRequest request, CancellationToken ct)
+    {
+        var type = await maintenance.CreateServiceTypeAsync(request, ct);
+        // No single-item GET exists for the catalog (it's always read as a
+        // list), so this points at the collection rather than using
+        // CreatedAtAction against a route that doesn't take an id.
+        return Created($"/api/service-types/{type.Id}", type);
+    }
+
+    [HttpPut("/api/service-types/{serviceTypeId:guid}")]
+    [ProducesResponseType<ServiceTypeDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ServiceTypeDto>> UpdateServiceType(
+        Guid serviceTypeId, UpdateServiceTypeRequest request, CancellationToken ct) =>
+        Ok(await maintenance.UpdateServiceTypeAsync(serviceTypeId, request, ct));
+
+    [HttpPost("/api/service-types/{serviceTypeId:guid}/deactivate")]
+    [ProducesResponseType<ServiceTypeDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ServiceTypeDto>> DeactivateServiceType(Guid serviceTypeId, CancellationToken ct) =>
+        Ok(await maintenance.DeactivateServiceTypeAsync(serviceTypeId, ct));
+
+    [HttpPost("/api/service-types/{serviceTypeId:guid}/reactivate")]
+    [ProducesResponseType<ServiceTypeDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ServiceTypeDto>> ReactivateServiceType(Guid serviceTypeId, CancellationToken ct) =>
+        Ok(await maintenance.ReactivateServiceTypeAsync(serviceTypeId, ct));
+
+    [HttpGet("/api/cars/{carId:guid}/service-type-status")]
+    [ProducesResponseType<IReadOnlyList<ServiceTypeStatusDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ServiceTypeStatusDto>>> GetServiceTypeStatus(Guid carId, CancellationToken ct) =>
+        Ok(await maintenance.GetServiceTypeStatusesAsync(carId, ct));
+
     [HttpPost("/api/cars/{carId:guid}/issues")]
     [ProducesResponseType<VehicleIssueDto>(StatusCodes.Status201Created)]
     public async Task<ActionResult<VehicleIssueDto>> ReportIssue(

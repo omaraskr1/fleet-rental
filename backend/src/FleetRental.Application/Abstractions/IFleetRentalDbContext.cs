@@ -32,6 +32,8 @@ public interface IFleetRentalDbContext
 
     DbSet<ServiceRecord> ServiceRecords { get; }
 
+    DbSet<ServiceType> ServiceTypes { get; }
+
     DbSet<VehicleIssue> VehicleIssues { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

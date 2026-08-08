@@ -1,4 +1,5 @@
 using System.Net;
+using FleetRental.Domain.Enums;
 
 namespace FleetRental.IntegrationTests;
 
@@ -8,7 +9,7 @@ namespace FleetRental.IntegrationTests;
 /// analytics.
 /// </summary>
 /// <remarks>
-/// SeedCarAsync fixes DailyRate at 300, which is what makes the revenue
+/// SeedCarAsync defaults Rate to 300 (PerDay), which is what makes the revenue
 /// arithmetic below predictable rather than incidental.
 /// </remarks>
 [Collection(nameof(ApiCollection))]
@@ -137,6 +138,42 @@ public class ProfitabilityTests(FleetRentalApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(0m, car!.EstimatedRevenue);
         Assert.Null(car.ProfitMarginPercent);
+    }
+
+    // ---------- Pricing model ----------
+
+    [Fact]
+    public async Task A_per_event_car_earns_its_rate_once_per_booking_not_per_day()
+    {
+        var carId = await factory.SeedCarAsync(rate: 2000m, pricingModel: PricingModel.PerEvent);
+        var admin = await SeedAdminAsync();
+        var client = factory.CreateTenantClient();
+        await client.SignUpAndAuthenticateAsync("client@test.com");
+
+        // A 5-day booking priced per event still earns 2000 once, not 2000 x 5.
+        await BookAndApproveAsync(admin, client, carId, Day(1), Day(5));
+
+        var rows = await admin.GetAsync<ApiClient.CarProfitabilityResult[]>("/api/analytics/profitability");
+        var car = Array.Find(rows!, r => r.CarId == carId);
+
+        Assert.Equal(2000m, car!.EstimatedRevenue);
+    }
+
+    [Fact]
+    public async Task A_per_event_car_with_two_bookings_earns_its_rate_twice()
+    {
+        var carId = await factory.SeedCarAsync(rate: 2000m, pricingModel: PricingModel.PerEvent);
+        var admin = await SeedAdminAsync();
+        var client = factory.CreateTenantClient();
+        await client.SignUpAndAuthenticateAsync("client@test.com");
+
+        await BookAndApproveAsync(admin, client, carId, Day(1), Day(2));
+        await BookAndApproveAsync(admin, client, carId, Day(10), Day(14));
+
+        var rows = await admin.GetAsync<ApiClient.CarProfitabilityResult[]>("/api/analytics/profitability");
+        var car = Array.Find(rows!, r => r.CarId == carId);
+
+        Assert.Equal(4000m, car!.EstimatedRevenue);
     }
 
     // ---------- Ranking ----------

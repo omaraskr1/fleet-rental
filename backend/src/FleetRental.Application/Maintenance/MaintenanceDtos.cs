@@ -19,6 +19,15 @@ public sealed record ServiceRecordDto
 
     public string? PerformedBy { get; init; }
 
+    public Guid? ServiceTypeId { get; init; }
+
+    public string? ServiceTypeName { get; init; }
+
+    /// <summary>
+    /// Requires ServiceType to be loaded when ServiceTypeId is set — callers pass
+    /// it through eagerly (see MaintenanceService.LogServiceAsync) so this never
+    /// silently lazy-loads.
+    /// </summary>
     public static ServiceRecordDto FromEntity(ServiceRecord record) => new()
     {
         Id = record.Id,
@@ -28,6 +37,8 @@ public sealed record ServiceRecordDto
         OdometerKm = record.OdometerKm,
         Cost = record.Cost,
         PerformedBy = record.PerformedBy,
+        ServiceTypeId = record.ServiceTypeId,
+        ServiceTypeName = record.ServiceType?.Name,
     };
 }
 
@@ -42,6 +53,64 @@ public sealed record LogServiceRequest
     public required decimal Cost { get; init; }
 
     public string? PerformedBy { get; init; }
+
+    public Guid? ServiceTypeId { get; init; }
+}
+
+// ---------- Service catalog ----------
+
+public sealed record ServiceTypeDto
+{
+    public required Guid Id { get; init; }
+
+    public required string Name { get; init; }
+
+    public required int IntervalKm { get; init; }
+
+    public required bool IsActive { get; init; }
+
+    public static ServiceTypeDto FromEntity(ServiceType type) => new()
+    {
+        Id = type.Id,
+        Name = type.Name,
+        IntervalKm = type.IntervalKm,
+        IsActive = type.IsActive,
+    };
+}
+
+public sealed record CreateServiceTypeRequest
+{
+    public required string Name { get; init; }
+
+    public required int IntervalKm { get; init; }
+}
+
+public sealed record UpdateServiceTypeRequest
+{
+    public required string Name { get; init; }
+
+    public required int IntervalKm { get; init; }
+}
+
+/// <summary>
+/// Km-until-due for one service type, on one car — the per-car breakdown the
+/// "tab to each car" view needs, one row per active catalog entry.
+/// </summary>
+public sealed record ServiceTypeStatusDto
+{
+    public required Guid ServiceTypeId { get; init; }
+
+    public required string ServiceTypeName { get; init; }
+
+    public required int IntervalKm { get; init; }
+
+    public DateOnly? LastPerformedAt { get; init; }
+
+    /// <summary>Null when this service has never been logged for this car, or the car has no current odometer.</summary>
+    public int? KmSinceLastService { get; init; }
+
+    /// <summary>False whenever KmSinceLastService is null — silence is never "not due."</summary>
+    public required bool IsDue { get; init; }
 }
 
 public sealed record VehicleIssueDto

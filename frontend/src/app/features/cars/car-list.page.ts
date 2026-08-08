@@ -99,7 +99,7 @@ import { CAR_CATEGORIES, type CarCategory } from '../../core/models';
                 <ion-icon name="people-outline" />
                 <span>{{ car.seats }}</span>
                 <span>·</span>
-                <strong>{{ car.dailyRate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ locale.t('cars.perDay') }}</strong>
+                <strong>{{ car.rate | currency: 'USD' : 'symbol' : '1.0-0' }}{{ priceSuffix(car.pricingModel) }}</strong>
               </div>
             </ion-card-content>
           </ion-card>
@@ -142,6 +142,10 @@ export class CarListPage implements OnInit {
 
   protected label(value: string): string {
     return this.locale.t(`enums.category.${value}`);
+  }
+
+  protected priceSuffix(pricingModel: string): string {
+    return pricingModel === 'PerEvent' ? this.locale.t('cars.perEvent') : this.locale.t('cars.perDay');
   }
 
   protected filter(category: CarCategory | null): void {

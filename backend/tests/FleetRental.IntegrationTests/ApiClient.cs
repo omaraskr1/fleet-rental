@@ -92,7 +92,8 @@ public class ApiClient(HttpClient http)
         string description,
         int? odometerKm,
         decimal cost,
-        string? performedBy = null) =>
+        string? performedBy = null,
+        Guid? serviceTypeId = null) =>
         http.PostAsJsonAsync($"/api/cars/{carId}/service-records", new
         {
             performedAt = performedAt.ToString("yyyy-MM-dd"),
@@ -100,6 +101,7 @@ public class ApiClient(HttpClient http)
             odometerKm,
             cost,
             performedBy,
+            serviceTypeId,
         }, Json);
 
     public Task<HttpResponseMessage> UpdateOdometerAsync(Guid carId, int km) =>
@@ -107,6 +109,30 @@ public class ApiClient(HttpClient http)
 
     public Task<HttpResponseMessage> SetServiceIntervalAsync(Guid carId, int? km) =>
         http.PutAsJsonAsync($"/api/cars/{carId}/service-interval", new { km }, Json);
+
+    // ---------- Service catalog ----------
+
+    public Task<HttpResponseMessage> CreateServiceTypeAsync(string name, int intervalKm) =>
+        http.PostAsJsonAsync("/api/service-types", new { name, intervalKm }, Json);
+
+    public async Task<Guid> CreateServiceTypeAndGetIdAsync(string name, int intervalKm)
+    {
+        var response = await CreateServiceTypeAsync(name, intervalKm);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<ServiceTypeResult>(Json))!.Id;
+    }
+
+    public Task<HttpResponseMessage> GetServiceTypesAsync(bool includeInactive = false) =>
+        http.GetAsync($"/api/service-types?includeInactive={includeInactive}");
+
+    public Task<HttpResponseMessage> DeactivateServiceTypeAsync(Guid serviceTypeId) =>
+        http.PostAsJsonAsync($"/api/service-types/{serviceTypeId}/deactivate", new { }, Json);
+
+    public Task<HttpResponseMessage> ReactivateServiceTypeAsync(Guid serviceTypeId) =>
+        http.PostAsJsonAsync($"/api/service-types/{serviceTypeId}/reactivate", new { }, Json);
+
+    public Task<HttpResponseMessage> GetServiceTypeStatusAsync(Guid carId) =>
+        http.GetAsync($"/api/cars/{carId}/service-type-status");
 
     public Task<HttpResponseMessage> ReportIssueAsync(Guid carId, string description, string severity) =>
         http.PostAsJsonAsync($"/api/cars/{carId}/issues", new { description, severity }, Json);
@@ -131,7 +157,15 @@ public class ApiClient(HttpClient http)
         Guid Id, Guid CarId, string CarName, string ReportedByName,
         string Description, string Severity, string Status);
 
-    public record ServiceRecordResult(Guid Id, Guid CarId, string PerformedAt, string Description, int? OdometerKm, decimal Cost);
+    public record ServiceRecordResult(
+        Guid Id, Guid CarId, string PerformedAt, string Description, int? OdometerKm, decimal Cost,
+        Guid? ServiceTypeId, string? ServiceTypeName);
+
+    public record ServiceTypeResult(Guid Id, string Name, int IntervalKm, bool IsActive);
+
+    public record ServiceTypeStatusResult(
+        Guid ServiceTypeId, string ServiceTypeName, int IntervalKm,
+        string? LastPerformedAt, int? KmSinceLastService, bool IsDue);
 
     public record MaintenanceSummaryResult(
         Guid CarId, string CarName, int? CurrentOdometerKm, int? ServiceIntervalKm,

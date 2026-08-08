@@ -2,8 +2,8 @@ namespace FleetRental.Application.Analytics;
 
 /// <summary>
 /// Fleet-wide snapshot for one date range. Revenue figures here are estimated
-/// from <c>Car.DailyRate × booked days</c> — Phase 1 takes no payment, so there
-/// is no billed amount to report instead. See <see cref="AnalyticsService"/>.
+/// from <c>Car.Rate</c> per its <c>PricingModel</c> — Phase 1 takes no payment,
+/// so there is no billed amount to report instead. See <see cref="AnalyticsService"/>.
 /// </summary>
 public sealed record AnalyticsOverviewDto
 {

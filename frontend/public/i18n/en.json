@@ -52,6 +52,7 @@
     "bookedToday": "Booked today",
     "seats": "{{count}} seats",
     "perDay": "/day",
+    "perEvent": "/event",
     "noResults": "No vehicles in this category.",
     "requestVehicle": "Request this vehicle",
     "notAvailable": "Not available for booking",
@@ -173,12 +174,31 @@
       "vehicle": "Vehicle",
       "category": "Category",
       "seats": "Seats",
-      "dailyRate": "Daily rate",
+      "rate": "Rate",
       "status": "Status",
       "today": "Today",
       "free": "Free",
       "booked": "Booked",
-      "maintenanceLink": "Maintenance"
+      "maintenanceLink": "Maintenance",
+      "addVehicle": "Add vehicle",
+      "edit": "Edit",
+      "retire": "Retire",
+      "retireConfirm": "Retire this vehicle?",
+      "retireConfirmButton": "Confirm retire",
+      "form": {
+        "addTitle": "Add vehicle",
+        "editTitle": "Edit vehicle",
+        "name": "Name",
+        "description": "Description",
+        "rate": "Rate",
+        "pricingModel": "Pricing model",
+        "pricingModelOption": {
+          "PerDay": "Per day",
+          "PerEvent": "Per event"
+        },
+        "licensePlateOptional": "License plate (optional)",
+        "save": "Save"
+      }
     },
     "maintenance": {
       "title": "Maintenance",
@@ -210,7 +230,26 @@
       "issueDescriptionPlaceholder": "AC not cooling",
       "severity": "Severity",
       "submitIssue": "Report issue",
-      "noIssues": "No issues reported."
+      "noIssues": "No issues reported.",
+      "serviceDue": "Service due",
+      "serviceDueEmpty": "No service types defined yet — add one from the Services page.",
+      "notYetPerformed": "Not yet performed",
+      "kmSince": "{{km}} km since last",
+      "serviceType": "Service type",
+      "serviceTypeNone": "None (free text only)"
+    },
+    "services": {
+      "title": "Services",
+      "add": "Add service",
+      "name": "Name",
+      "namePlaceholder": "Oil change",
+      "intervalKm": "Interval (km)",
+      "every": "Every {{km}} km",
+      "active": "Active",
+      "inactive": "Inactive",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "empty": "No service types yet — add the first one above."
     },
     "issues": {
       "title": "Vehicle issues",
@@ -244,7 +283,7 @@
       "utilizationByCar": "Utilization by car",
       "demandByEventType": "Demand by event type",
       "profitability": "Profit by car",
-      "profitabilityNote": "Revenue is estimated from daily rate × booked days; only maintenance cost is actual spend.",
+      "profitabilityNote": "Revenue is estimated from each car's rate (per day × booked days, or once per event); only maintenance cost is actual spend.",
       "vehicle": "Vehicle",
       "revenue": "Revenue",
       "cost": "Maintenance",

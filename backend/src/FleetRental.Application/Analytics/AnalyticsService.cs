@@ -13,12 +13,15 @@ namespace FleetRental.Application.Analytics;
 /// ranges.
 /// </summary>
 /// <remarks>
-/// Revenue is estimated as <c>Car.DailyRate × booked days</c>, clamped to the
-/// requested range. Phase 1 takes no payment and <c>Car.DailyRate</c> "is shown
-/// for information only and is not used to compute a total anywhere" (see
-/// <c>Car.cs</c>) — this service is the first thing that treats it as a number,
-/// and every DTO name says "Estimated" so nothing downstream mistakes it for a
-/// billed amount.
+/// Revenue is estimated from <c>Car.Rate</c>, clamped to the requested range.
+/// A per-day car earns <c>Rate</c> for every overlapping day; a per-event car
+/// earns <c>Rate</c> exactly once per booking that overlaps at all, regardless
+/// of how many of its days fall inside the range — see
+/// <see cref="EstimateRevenue"/>. Phase 1 takes no payment and <c>Car.Rate</c>
+/// "is shown for information only and is not used to compute a total anywhere"
+/// (see <c>Car.cs</c>) — this service is the first thing that treats it as a
+/// number, and every DTO name says "Estimated" so nothing downstream mistakes
+/// it for a billed amount.
 /// </remarks>
 public class AnalyticsService(IFleetRentalDbContext db)
 {
@@ -30,7 +33,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
 
         var bookings = await db.Bookings
             .Where(b => b.Period.Start <= to && b.Period.End >= from)
-            .Select(b => new BookingRow(b.Status, b.Period.Start, b.Period.End, b.Car.DailyRate))
+            .Select(b => new BookingRow(b.Status, b.Period.Start, b.Period.End, b.Car.Rate, b.Car.PricingModel))
             .ToListAsync(cancellationToken);
 
         var pending = bookings.Count(b => b.Status == BookingStatus.Pending);
@@ -47,7 +50,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
 
         var estimatedRevenue = bookings
             .Where(b => b.Status == BookingStatus.Approved)
-            .Sum(b => OverlapDays(b.Start, b.End, from, to) * b.DailyRate);
+            .Sum(b => EstimateRevenue(b.PricingModel, b.Rate, OverlapDays(b.Start, b.End, from, to)));
 
         var daysInRange = to.DayNumber - from.DayNumber + 1;
         var possibleCarDays = (long)activeCars * daysInRange;
@@ -91,7 +94,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
     {
         var bookings = await db.Bookings
             .Where(b => b.Status == BookingStatus.Approved && b.Period.Start <= to && b.Period.End >= from)
-            .Select(b => new { b.Period.Start, b.Period.End, b.Car.DailyRate })
+            .Select(b => new { b.Period.Start, b.Period.End, b.Car.Rate, b.Car.PricingModel })
             .ToListAsync(cancellationToken);
 
         return [.. EnumerateMonths(from, to).Select(monthStart =>
@@ -103,7 +106,8 @@ public class AnalyticsService(IFleetRentalDbContext db)
             {
                 PeriodLabel = monthStart.ToString("MMM yyyy"),
                 PeriodStart = monthStart,
-                EstimatedRevenue = inMonth.Sum(b => OverlapDays(b.Start, b.End, monthStart, monthEnd) * b.DailyRate),
+                EstimatedRevenue = inMonth.Sum(b =>
+                    EstimateRevenue(b.PricingModel, b.Rate, OverlapDays(b.Start, b.End, monthStart, monthEnd))),
                 ApprovedBookings = inMonth.Count,
             };
         })];
@@ -388,7 +392,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
         var daysInRange = to.DayNumber - from.DayNumber + 1;
 
         var cars = await db.Cars
-            .Select(c => new { c.Id, c.Name, c.DailyRate })
+            .Select(c => new { c.Id, c.Name, c.Rate, c.PricingModel })
             .ToListAsync(cancellationToken);
 
         var bookings = await db.Bookings
@@ -401,6 +405,12 @@ public class AnalyticsService(IFleetRentalDbContext db)
             var carBookings = bookings.Where(b => b.CarId == car.Id).ToList();
             var bookedDays = carBookings.Sum(b => OverlapDays(b.Start, b.End, from, to));
 
+            // Revenue is summed per booking, not from the aggregate bookedDays —
+            // a per-event car with two bookings in range earns Rate twice, not
+            // once for their combined day count.
+            var estimatedRevenue = carBookings.Sum(b =>
+                EstimateRevenue(car.PricingModel, car.Rate, OverlapDays(b.Start, b.End, from, to)));
+
             return new CarUtilizationDto
             {
                 CarId = car.Id,
@@ -409,7 +419,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
                 DaysInRange = daysInRange,
                 UtilizationPercent = daysInRange == 0 ? 0d : Math.Round(100.0 * bookedDays / daysInRange, 1),
                 BookingCount = carBookings.Count,
-                EstimatedRevenue = bookedDays * car.DailyRate,
+                EstimatedRevenue = estimatedRevenue,
             };
         });
 
@@ -422,8 +432,8 @@ public class AnalyticsService(IFleetRentalDbContext db)
     /// of a decision is the one the owner sees at the top.
     /// </summary>
     /// <remarks>
-    /// Only the cost side is real money. Revenue remains an estimate
-    /// (<c>DailyRate × booked days</c>) until payments are recorded, so "profit"
+    /// Only the cost side is real money. Revenue remains an estimate (see
+    /// <see cref="EstimateRevenue"/>) until payments are recorded, so "profit"
     /// here is directional — good for ranking one car against another, not for
     /// the books. Every field name says "Estimated" for that reason.
     /// </remarks>
@@ -484,7 +494,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
     {
         var rows = await db.Bookings
             .Where(b => b.Period.Start <= to && b.Period.End >= from)
-            .Select(b => new { b.Event.Type, b.Status, b.Period.Start, b.Period.End, b.Car.DailyRate })
+            .Select(b => new { b.Event.Type, b.Status, b.Period.Start, b.Period.End, b.Car.Rate, b.Car.PricingModel })
             .ToListAsync(cancellationToken);
 
         return [.. rows
@@ -496,7 +506,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
                 ApprovedCount = g.Count(r => r.Status == BookingStatus.Approved),
                 EstimatedRevenue = g
                     .Where(r => r.Status == BookingStatus.Approved)
-                    .Sum(r => OverlapDays(r.Start, r.End, from, to) * r.DailyRate),
+                    .Sum(r => EstimateRevenue(r.PricingModel, r.Rate, OverlapDays(r.Start, r.End, from, to))),
             })
             .OrderByDescending(d => d.BookingCount)];
     }
@@ -585,5 +595,21 @@ public class AnalyticsService(IFleetRentalDbContext db)
     /// <summary>SSA's confidence band can dip below zero for a near-flat series; revenue never does.</summary>
     private static decimal ToNonNegativeDecimal(float value) => (decimal)Math.Max(0f, value);
 
-    private sealed record BookingRow(BookingStatus Status, DateOnly Start, DateOnly End, decimal DailyRate);
+    /// <summary>
+    /// A per-day car earns <paramref name="rate"/> for every overlapping day. A
+    /// per-event car earns <paramref name="rate"/> exactly once for the booking,
+    /// as long as it overlaps the range at all — a multi-day event priced per
+    /// event is not multiplied by its length.
+    /// </summary>
+    private static decimal EstimateRevenue(PricingModel pricingModel, decimal rate, int overlapDays) =>
+        pricingModel == PricingModel.PerEvent
+            ? (overlapDays > 0 ? rate : 0m)
+            : rate * overlapDays;
+
+    private sealed record BookingRow(
+        BookingStatus Status,
+        DateOnly Start,
+        DateOnly End,
+        decimal Rate,
+        PricingModel PricingModel);
 }

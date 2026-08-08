@@ -95,6 +95,32 @@ import { ISSUE_SEVERITIES, type IssueSeverity } from '../../core/models';
       <ion-note color="danger" class="banner">{{ error }}</ion-note>
     }
 
+    <h2 class="section">{{ locale.t('admin.maintenance.serviceDue') }}</h2>
+    @if (store.serviceTypeStatuses().length === 0) {
+      <p class="empty">{{ locale.t('admin.maintenance.serviceDueEmpty') }}</p>
+    } @else {
+      @for (status of store.serviceTypeStatuses(); track status.serviceTypeId) {
+        <ion-card>
+          <ion-card-content>
+            <div class="row">
+              <strong>{{ status.serviceTypeName }}</strong>
+              <ion-badge [color]="status.isDue ? 'warning' : 'success'">
+                {{ status.isDue ? locale.t('admin.maintenance.due') : locale.t('admin.maintenance.notDue') }}
+              </ion-badge>
+            </div>
+            <p class="muted">
+              @if (status.kmSinceLastService !== null) {
+                {{ locale.t('admin.maintenance.kmSince', { km: status.kmSinceLastService }) }} ·
+              } @else {
+                {{ locale.t('admin.maintenance.notYetPerformed') }} ·
+              }
+              {{ locale.t('admin.services.every', { km: status.intervalKm }) }}
+            </p>
+          </ion-card-content>
+        </ion-card>
+      }
+    }
+
     <ion-card>
       <ion-card-content>
         <h2>{{ locale.t('admin.maintenance.logService') }}</h2>
@@ -106,6 +132,15 @@ import { ISSUE_SEVERITIES, type IssueSeverity } from '../../core/models';
         <ion-item>
           <ion-label position="stacked">{{ locale.t('admin.maintenance.description') }}</ion-label>
           <ion-input [(ngModel)]="serviceDescription" [placeholder]="locale.t('admin.maintenance.descriptionPlaceholder')" />
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">{{ locale.t('admin.maintenance.serviceType') }}</ion-label>
+          <ion-select [(ngModel)]="serviceTypeId" interface="action-sheet">
+            <ion-select-option [value]="null">{{ locale.t('admin.maintenance.serviceTypeNone') }}</ion-select-option>
+            @for (type of store.serviceTypes(); track type.id) {
+              <ion-select-option [value]="type.id">{{ type.name }}</ion-select-option>
+            }
+          </ion-select>
         </ion-item>
         <ion-item>
           <ion-label position="stacked">{{ locale.t('admin.maintenance.odometerOptional') }}</ion-label>
@@ -233,6 +268,7 @@ export class AdminCarMaintenancePage implements OnInit {
   protected serviceOdometer: number | null = null;
   protected serviceCost: number | null = null;
   protected servicePerformedBy = '';
+  protected serviceTypeId: string | null = null;
 
   protected issueDescription = '';
   protected issueSeverity: IssueSeverity = 'Medium';
@@ -246,6 +282,8 @@ export class AdminCarMaintenancePage implements OnInit {
       this.store.loadSummary(this.carId()),
       this.store.loadHistory(this.carId()),
       this.store.loadIssues(this.carId()),
+      this.store.loadServiceTypes(),
+      this.store.loadServiceTypeStatuses(this.carId()),
     ]);
   }
 
@@ -268,6 +306,9 @@ export class AdminCarMaintenancePage implements OnInit {
     if (this.odometerInput === null) return;
     await this.store.updateOdometer(this.carId(), this.odometerInput);
     this.odometerInput = null;
+
+    // Every service type's km-since-last depends on the car's current reading.
+    await this.store.loadServiceTypeStatuses(this.carId());
   }
 
   protected async saveInterval(): Promise<void> {
@@ -284,12 +325,17 @@ export class AdminCarMaintenancePage implements OnInit {
         odometerKm: this.serviceOdometer,
         cost: this.serviceCost!,
         performedBy: this.servicePerformedBy.trim() || null,
+        serviceTypeId: this.serviceTypeId,
       });
 
       this.serviceDescription = '';
       this.serviceOdometer = null;
       this.serviceCost = null;
       this.servicePerformedBy = '';
+      this.serviceTypeId = null;
+
+      // Km-since-last for the logged type may have just changed.
+      await this.store.loadServiceTypeStatuses(this.carId());
     } catch {
       // Message shown in the banner.
     }
