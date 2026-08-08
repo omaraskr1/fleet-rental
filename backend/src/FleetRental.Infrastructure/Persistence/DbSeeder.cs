@@ -20,6 +20,10 @@ public class DbSeeder(
     {
         await db.Database.MigrateAsync(cancellationToken);
 
+        // Not tenant-owned, so this runs before any tenant is set — same as the
+        // tenant itself.
+        await SeedPlatformAdminAsync(options, cancellationToken);
+
         // Seeding creates the tenant it then works inside, so it necessarily starts
         // outside isolation. Once the tenant is set, the rest is filtered normally.
         var tenant = await SeedTenantAsync(options, cancellationToken);
@@ -27,6 +31,37 @@ public class DbSeeder(
 
         await SeedAdminAsync(options, cancellationToken);
         await SeedCarsAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Optional and independent of tenant/admin seeding — a fresh clone is usable
+    /// without a platform admin, so this only runs when a password is explicitly
+    /// configured, the same "never invent a default" rule <see cref="SeedAdminAsync"/>
+    /// follows.
+    /// </summary>
+    private async Task SeedPlatformAdminAsync(SeedOptions options, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(options.PlatformAdminPassword))
+        {
+            logger.LogWarning("Seed:PlatformAdminPassword is not set; skipping platform-admin seeding.");
+            return;
+        }
+
+        var email = PlatformAdmin.NormalizeEmail(options.PlatformAdminEmail);
+
+        if (await db.PlatformAdmins.AnyAsync(a => a.Email == email, cancellationToken))
+        {
+            return;
+        }
+
+        db.PlatformAdmins.Add(PlatformAdmin.Create(
+            email,
+            passwordHasher.Hash(options.PlatformAdminPassword),
+            options.PlatformAdminFullName));
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Seeded platform administrator {Email}.", email);
     }
 
     private async Task<Tenant> SeedTenantAsync(SeedOptions options, CancellationToken cancellationToken)
@@ -137,4 +172,11 @@ public class SeedOptions
 
     /// <summary>Company code clients type on first launch.</summary>
     public string TenantCode { get; set; } = "demo-fleet";
+
+    public string PlatformAdminEmail { get; set; } = "platform@fleetrental.local";
+
+    /// <summary>Empty by default, same rule as <see cref="AdminPassword"/>.</summary>
+    public string PlatformAdminPassword { get; set; } = string.Empty;
+
+    public string PlatformAdminFullName { get; set; } = "Platform Administrator";
 }

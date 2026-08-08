@@ -16,8 +16,14 @@ import type {
   CarProfitability,
   CarUtilization,
   CategoryDemand,
+  Company,
+  CompanyAdmin,
   CreateBookingRequest,
   CreateCarRequest,
+  CreateCompanyAdminRequest,
+  CreateCompanyRequest,
+  CreatePlatformAdminRequest,
+  CreatePlatformCarRequest,
   DevicePlatform,
   EventTypeBreakdown,
   FleetAvailability,
@@ -26,6 +32,9 @@ import type {
   LogServiceRequest,
   BookingApprovalPredictions,
   MaintenanceCostPoint,
+  PlatformAdmin,
+  PlatformAuthResponse,
+  PlatformCar,
   ReportIssueRequest,
   RevenueForecast,
   RevenuePoint,
@@ -338,6 +347,74 @@ export class ApiService {
         params: new HttpParams().set('months', months),
       }),
     );
+  }
+
+  // ---------- Platform admin ----------
+
+  platformLogin(email: string, password: string): Promise<PlatformAuthResponse> {
+    return firstValueFrom(
+      this.http.post<PlatformAuthResponse>(`${this.base}/platform/auth/login`, { email, password }),
+    );
+  }
+
+  platformMe(): Promise<PlatformAdmin> {
+    return firstValueFrom(this.http.get<PlatformAdmin>(`${this.base}/platform/auth/me`));
+  }
+
+  getPlatformAdmins(): Promise<PlatformAdmin[]> {
+    return firstValueFrom(this.http.get<PlatformAdmin[]>(`${this.base}/platform/admins`));
+  }
+
+  createPlatformAdmin(request: CreatePlatformAdminRequest): Promise<PlatformAdmin> {
+    return firstValueFrom(this.http.post<PlatformAdmin>(`${this.base}/platform/admins`, request));
+  }
+
+  getCompanies(): Promise<Company[]> {
+    return firstValueFrom(this.http.get<Company[]>(`${this.base}/platform/companies`));
+  }
+
+  createCompany(request: CreateCompanyRequest): Promise<Company> {
+    return firstValueFrom(this.http.post<Company>(`${this.base}/platform/companies`, request));
+  }
+
+  suspendCompany(tenantId: string): Promise<Company> {
+    return firstValueFrom(
+      this.http.post<Company>(`${this.base}/platform/companies/${tenantId}/suspend`, {}),
+    );
+  }
+
+  reactivateCompany(tenantId: string): Promise<Company> {
+    return firstValueFrom(
+      this.http.post<Company>(`${this.base}/platform/companies/${tenantId}/reactivate`, {}),
+    );
+  }
+
+  getCompanyAdmins(tenantId: string): Promise<CompanyAdmin[]> {
+    return firstValueFrom(
+      this.http.get<CompanyAdmin[]>(`${this.base}/platform/companies/${tenantId}/admins`),
+    );
+  }
+
+  createCompanyAdmin(tenantId: string, request: CreateCompanyAdminRequest): Promise<CompanyAdmin> {
+    return firstValueFrom(
+      this.http.post<CompanyAdmin>(`${this.base}/platform/companies/${tenantId}/admins`, request),
+    );
+  }
+
+  getPlatformCars(): Promise<PlatformCar[]> {
+    return firstValueFrom(this.http.get<PlatformCar[]>(`${this.base}/platform/cars`));
+  }
+
+  createPlatformCar(request: CreatePlatformCarRequest): Promise<PlatformCar> {
+    return firstValueFrom(this.http.post<PlatformCar>(`${this.base}/platform/cars`, request));
+  }
+
+  updatePlatformCar(id: string, request: UpdateCarRequest): Promise<PlatformCar> {
+    return firstValueFrom(this.http.put<PlatformCar>(`${this.base}/platform/cars/${id}`, request));
+  }
+
+  retirePlatformCar(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.base}/platform/cars/${id}`));
   }
 
   private rangeParams(from?: IsoDate, to?: IsoDate): HttpParams {

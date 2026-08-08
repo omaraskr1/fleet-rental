@@ -6,6 +6,14 @@ public interface ITokenGenerator
 {
     /// <summary>Issues a signed JWT carrying the user's id and role.</summary>
     AuthToken Generate(User user);
+
+    /// <summary>
+    /// Issues a signed JWT for a platform admin. Carries no tenant claim at all —
+    /// TenantResolutionMiddleware then resolves no tenant for the request, which is
+    /// correct: platform endpoints work across/outside tenants and bypass
+    /// isolation explicitly per call.
+    /// </summary>
+    AuthToken Generate(PlatformAdmin admin);
 }
 
 /// <param name="AccessToken">Signed JWT for the Authorization header.</param>

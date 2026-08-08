@@ -102,6 +102,7 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             DELETE FROM Cars;
             DELETE FROM Users;
             DELETE FROM Tenants;
+            DELETE FROM PlatformAdmins;
             """);
     }
 
@@ -140,6 +141,24 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         var tenant = await db.Tenants.SingleAsync(t => t.Id == tenantId);
         tenant.Suspend();
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>A plain HTTP client with no tenant header — platform endpoints need none.</summary>
+    public ApiClient CreatePlatformClient() => new(CreateClient());
+
+    /// <summary>Creates a platform admin (not tenant-owned) and returns their credentials.</summary>
+    public async Task<(string Email, string Password)> SeedPlatformAdminAsync(
+        string email = "platform@test.local",
+        string password = "PlatformPass123")
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+        db.PlatformAdmins.Add(PlatformAdmin.Create(email, hasher.Hash(password), "Test Platform Admin"));
+        await db.SaveChangesAsync();
+
+        return (email, password);
     }
 
     /// <summary>Creates an administrator inside a tenant and returns their credentials.</summary>
@@ -191,6 +210,19 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         });
 
         return carId;
+    }
+
+    /// <summary>Soft-disables a platform admin so the login path can be exercised.</summary>
+    public async Task DeactivatePlatformAdminAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+
+        var normalized = PlatformAdmin.NormalizeEmail(email);
+        var admin = await db.PlatformAdmins.SingleAsync(a => a.Email == normalized);
+
+        admin.Deactivate();
+        await db.SaveChangesAsync();
     }
 
     /// <summary>Soft-disables an account so the login path can be exercised.</summary>

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using FleetRental.Application.Common;
 using FleetRental.Domain.Enums;
 
 namespace FleetRental.Api.Extensions;
@@ -23,4 +24,7 @@ public static class ClaimsPrincipalExtensions
 
     public static bool IsAdmin(this ClaimsPrincipal principal) =>
         principal.IsInRole(nameof(UserRole.Admin));
+
+    public static bool IsPlatformAdmin(this ClaimsPrincipal principal) =>
+        principal.IsInRole(PlatformRoles.PlatformAdmin);
 }

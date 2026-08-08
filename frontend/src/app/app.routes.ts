@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminGuard, authGuard, guestGuard } from './core/guards/auth.guard';
+import { platformAuthGuard, platformGuestGuard } from './core/guards/platform-auth.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
 
 /**
@@ -137,6 +138,43 @@ export const routes: Routes = [
         path: 'analytics',
         loadComponent: () =>
           import('./features/admin/admin-analytics.page').then((m) => m.AdminAnalyticsPage),
+      },
+    ],
+  },
+
+  // ---------- Platform panel (super-admin, across every company) ----------
+  // Deliberately outside the tenant route tree — no tenantGuard here. A
+  // platform admin operates above/across companies, not inside one, so
+  // "which company" is not a question these routes ever need answered.
+  {
+    path: 'platform/login',
+    canActivate: [platformGuestGuard],
+    loadComponent: () =>
+      import('./features/platform/platform-login.page').then((m) => m.PlatformLoginPage),
+  },
+  {
+    path: 'platform',
+    canActivate: [platformAuthGuard],
+    loadComponent: () =>
+      import('./features/platform/platform-shell.page').then((m) => m.PlatformShellPage),
+    children: [
+      { path: '', redirectTo: 'companies', pathMatch: 'full' },
+      {
+        path: 'companies',
+        loadComponent: () =>
+          import('./features/platform/platform-companies.page').then((m) => m.PlatformCompaniesPage),
+      },
+      {
+        path: 'companies/:tenantId/admins',
+        loadComponent: () =>
+          import('./features/platform/platform-company-admins.page').then(
+            (m) => m.PlatformCompanyAdminsPage,
+          ),
+      },
+      {
+        path: 'cars',
+        loadComponent: () =>
+          import('./features/platform/platform-cars.page').then((m) => m.PlatformCarsPage),
       },
     ],
   },

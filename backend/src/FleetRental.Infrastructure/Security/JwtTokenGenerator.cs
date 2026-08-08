@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using FleetRental.Application.Abstractions;
+using FleetRental.Application.Common;
 using FleetRental.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,8 +15,6 @@ public class JwtTokenGenerator(IOptions<JwtOptions> options) : ITokenGenerator
 
     public AuthToken Generate(User user)
     {
-        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.ExpiryMinutes);
-
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -32,6 +31,30 @@ public class JwtTokenGenerator(IOptions<JwtOptions> options) : ITokenGenerator
             new("tenant_id", user.TenantId.ToString()),
         };
 
+        return Sign(claims);
+    }
+
+    public AuthToken Generate(PlatformAdmin admin)
+    {
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, admin.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, admin.Email),
+            new(JwtRegisteredClaimNames.Name, admin.FullName),
+            new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
+            new(ClaimTypes.Role, PlatformRoles.PlatformAdmin),
+
+            // Deliberately no "tenant_id" claim — a platform admin belongs to no
+            // tenant, so TenantResolutionMiddleware resolves none for this token,
+            // and every platform endpoint bypasses isolation explicitly per call.
+        };
+
+        return Sign(claims);
+    }
+
+    private AuthToken Sign(List<Claim> claims)
+    {
+        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_options.ExpiryMinutes);
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
 
         var token = new JwtSecurityToken(

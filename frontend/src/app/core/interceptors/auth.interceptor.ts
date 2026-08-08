@@ -10,6 +10,12 @@ import { AuthStore } from '../stores/auth.store';
  * takes effect on in-flight navigation immediately.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  // Platform calls carry their own, entirely separate token — see
+  // platformAuthInterceptor — so this one stays out of the way for them.
+  if (req.url.includes('/platform/')) {
+    return next(req);
+  }
+
   const token = inject(AuthStore).token();
 
   if (!token) {

@@ -10,10 +10,13 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideIonicAngular } from '@ionic/angular/standalone';
 
 import { routes } from './app.routes';
+import { environment } from '../environments/environment';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { platformAuthInterceptor } from './core/interceptors/platform-auth.interceptor';
 import { tenantInterceptor } from './core/interceptors/tenant.interceptor';
 import { AuthStore } from './core/stores/auth.store';
+import { PlatformAuthStore } from './core/stores/platform-auth.store';
 import { TenantStore } from './core/stores/tenant.store';
 import { LocaleStore } from './core/stores/locale.store';
 import { ThemeStore } from './core/stores/theme.store';
@@ -32,7 +35,9 @@ export const appConfig: ApplicationConfig = {
     // Order matters: tenant scopes the request, auth attaches the token, then
     // error maps failures. The error interceptor sits outermost so it sees
     // responses to fully-formed requests.
-    provideHttpClient(withInterceptors([tenantInterceptor, authInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withInterceptors([tenantInterceptor, authInterceptor, platformAuthInterceptor, errorInterceptor]),
+    ),
 
     provideIonicAngular({
       // Render iOS styling on iOS and Material on Android, which is what makes
@@ -61,12 +66,22 @@ export const appConfig: ApplicationConfig = {
       const tenant = inject(TenantStore);
       const locale = inject(LocaleStore);
       const auth = inject(AuthStore);
+      const platformAuth = inject(PlatformAuthStore);
 
       theme.init();
       tenant.restore();
 
+      // Launching with one customer: skip the company picker entirely by
+      // auto-selecting the configured company the first time the app runs on
+      // a device (a returning user already has one restored above). Flipping
+      // environment.defaultCompanyCode back to '' brings the picker back.
+      if (!tenant.isSelected() && environment.defaultCompanyCode) {
+        await tenant.selectByCode(environment.defaultCompanyCode);
+      }
+
       await locale.init();
       await auth.restoreSession();
+      await platformAuth.restoreSession();
     }),
   ],
 };

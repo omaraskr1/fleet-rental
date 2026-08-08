@@ -421,3 +421,78 @@ export interface RevenueForecast {
   history: RevenuePoint[];
   forecast: RevenueForecastPoint[];
 }
+
+// ---------- Platform admin ----------
+
+export interface PlatformAdmin {
+  id: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+}
+
+export interface PlatformAuthResponse {
+  accessToken: string;
+  expiresAt: string;
+  admin: PlatformAdmin;
+}
+
+export interface CreatePlatformAdminRequest {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+export type CompanyStatus = 'Active' | 'Suspended';
+
+export interface Company {
+  id: string;
+  name: string;
+  code: string;
+  contactEmail: string | null;
+  status: CompanyStatus;
+}
+
+export interface CreateCompanyRequest {
+  name: string;
+  code: string;
+  contactEmail?: string | null;
+}
+
+export interface CompanyAdmin {
+  id: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+}
+
+export interface CreateCompanyAdminRequest {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+export interface PlatformCar {
+  id: string;
+  companyId: string;
+  companyName: string;
+  name: string;
+  description: string;
+  category: CarCategory;
+  seats: number;
+  rate: number;
+  pricingModel: PricingModel;
+  status: CarStatus;
+  licensePlate: string | null;
+}
+
+export interface CreatePlatformCarRequest {
+  companyId: string;
+  name: string;
+  description: string;
+  category: CarCategory;
+  seats: number;
+  rate: number;
+  pricingModel: PricingModel;
+  licensePlate?: string | null;
+}

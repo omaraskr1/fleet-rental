@@ -5,6 +5,7 @@ using FleetRental.Application.Bookings;
 using FleetRental.Application.Cars;
 using FleetRental.Application.Maintenance;
 using FleetRental.Application.Notifications;
+using FleetRental.Application.Platform;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FleetRental.Application;
@@ -25,6 +26,9 @@ public static class DependencyInjection
         services.AddScoped<Tenants.TenantService>();
         services.AddScoped<MaintenanceService>();
         services.AddScoped<AnalyticsService>();
+        services.AddScoped<PlatformAdminService>();
+        services.AddScoped<PlatformCompanyService>();
+        services.AddScoped<PlatformCarService>();
 
         return services;
     }

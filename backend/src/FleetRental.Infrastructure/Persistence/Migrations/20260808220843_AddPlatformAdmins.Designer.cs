@@ -5,6 +5,7 @@ using FleetRental.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,9 +13,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FleetRental.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(FleetRentalDbContext))]
-    partial class FleetRentalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808220843_AddPlatformAdmins")]
+    partial class AddPlatformAdmins
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

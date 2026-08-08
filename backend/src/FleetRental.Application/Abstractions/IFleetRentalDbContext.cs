@@ -28,6 +28,12 @@ public interface IFleetRentalDbContext
 
     DbSet<User> Users { get; }
 
+    /// <summary>
+    /// Operators who work across every tenant. Not tenant-filtered, like
+    /// <see cref="Tenants"/> — reads here must always be by id or email.
+    /// </summary>
+    DbSet<PlatformAdmin> PlatformAdmins { get; }
+
     DbSet<DeviceToken> DeviceTokens { get; }
 
     DbSet<ServiceRecord> ServiceRecords { get; }

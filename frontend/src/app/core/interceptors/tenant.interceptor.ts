@@ -13,6 +13,14 @@ import { TenantStore } from '../stores/tenant.store';
  * whose tenant to sign up or log into.
  */
 export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
+  // Platform calls are deliberately tenant-less — attaching a header here would
+  // let an authenticated platform admin's request resolve to whichever tenant
+  // this browser happens to have selected, which is exactly what platform
+  // endpoints must not depend on.
+  if (req.url.includes('/platform/')) {
+    return next(req);
+  }
+
   const code = inject(TenantStore).code();
 
   // The tenant lookup itself must not be scoped to a tenant — that is the request

@@ -47,6 +47,8 @@ public class FleetRentalDbContext(
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<PlatformAdmin> PlatformAdmins => Set<PlatformAdmin>();
+
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
 
     public DbSet<ServiceType> ServiceTypes => Set<ServiceType>();

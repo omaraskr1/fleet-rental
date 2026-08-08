@@ -20,16 +20,19 @@ public class TenantIsolationTests(FleetRentalApiFactory factory) : IAsyncLifetim
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public void Every_persisted_entity_except_Tenant_is_tenant_owned()
+    public void Every_persisted_entity_except_Tenant_and_PlatformAdmin_is_tenant_owned()
     {
         // A new entity that forgets to derive from TenantEntity gets no query
         // filter and silently becomes globally visible. Rather than rely on
         // remembering, this fails the build's test run the moment it happens.
+        //
+        // PlatformAdmin is excluded alongside Tenant for the same reason: it is
+        // the thing operating across tenants, not something owned by one.
         var entityTypes = typeof(Car).Assembly
             .GetTypes()
             .Where(t => t is { IsAbstract: false, IsClass: true })
             .Where(t => typeof(Entity).IsAssignableFrom(t))
-            .Where(t => t != typeof(Tenant))
+            .Where(t => t != typeof(Tenant) && t != typeof(PlatformAdmin))
             .ToList();
 
         Assert.NotEmpty(entityTypes);

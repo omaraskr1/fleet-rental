@@ -30,6 +30,7 @@ services:
       # Test-environment-only secrets. Never reuse these for a real deploy.
       Jwt__Key: "docker-test-environment-signing-key-not-for-production-use"
       Seed__AdminPassword: "ChangeMe!2026"
+      Seed__PlatformAdminPassword: "ChangeMe!2026"
       Platform__ProvisioningKey: "docker-test-provisioning-key"
       Cors__AllowedOrigins__0: "http://localhost:8080"
       Cors__AllowedOrigins__1: "http://localhost:4200"

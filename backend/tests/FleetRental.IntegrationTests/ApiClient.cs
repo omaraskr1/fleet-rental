@@ -182,6 +182,61 @@ public class ApiClient(HttpClient http)
 
     public record ProblemResult(int Status, string Title, string Detail);
 
+    // ---------- Platform ----------
+
+    public async Task<string> PlatformLoginAsync(string email, string password)
+    {
+        var response = await http.PostAsJsonAsync("/api/platform/auth/login", new { email, password }, Json);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<PlatformAuthResult>(Json))!.AccessToken;
+    }
+
+    public Task<HttpResponseMessage> CreateCompanyAsync(string name, string code, string? contactEmail = null) =>
+        http.PostAsJsonAsync("/api/platform/companies", new { name, code, contactEmail }, Json);
+
+    public async Task<Guid> CreateCompanyAndGetIdAsync(string name, string code)
+    {
+        var response = await CreateCompanyAsync(name, code);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<CompanyResult>(Json))!.Id;
+    }
+
+    public Task<HttpResponseMessage> GetCompaniesAsync() => http.GetAsync("/api/platform/companies");
+
+    public Task<HttpResponseMessage> SuspendCompanyAsync(Guid tenantId) =>
+        http.PostAsJsonAsync($"/api/platform/companies/{tenantId}/suspend", new { }, Json);
+
+    public Task<HttpResponseMessage> ReactivateCompanyAsync(Guid tenantId) =>
+        http.PostAsJsonAsync($"/api/platform/companies/{tenantId}/reactivate", new { }, Json);
+
+    public Task<HttpResponseMessage> CreateCompanyAdminAsync(
+        Guid tenantId, string email, string password, string fullName = "Company Admin") =>
+        http.PostAsJsonAsync($"/api/platform/companies/{tenantId}/admins", new { email, password, fullName }, Json);
+
+    public Task<HttpResponseMessage> GetCompanyAdminsAsync(Guid tenantId) =>
+        http.GetAsync($"/api/platform/companies/{tenantId}/admins");
+
+    public Task<HttpResponseMessage> CreatePlatformCarAsync(
+        Guid companyId, string name, string category = "Sedan", int seats = 4, decimal rate = 100m) =>
+        http.PostAsJsonAsync("/api/platform/cars", new { companyId, name, category, seats, rate }, Json);
+
+    public Task<HttpResponseMessage> GetPlatformCarsAsync() => http.GetAsync("/api/platform/cars");
+
+    public Task<HttpResponseMessage> CreatePlatformAdminAsync(string email, string password, string fullName) =>
+        http.PostAsJsonAsync("/api/platform/admins", new { email, password, fullName }, Json);
+
+    public record PlatformAuthResult(string AccessToken, DateTimeOffset ExpiresAt, PlatformAdminResult Admin);
+
+    public record PlatformAdminResult(Guid Id, string Email, string FullName, bool IsActive);
+
+    public record CompanyResult(Guid Id, string Name, string Code, string? ContactEmail, string Status);
+
+    public record CompanyAdminResult(Guid Id, string Email, string FullName, bool IsActive);
+
+    public record PlatformCarResult(
+        Guid Id, Guid CompanyId, string CompanyName, string Name, string Description,
+        string Category, int Seats, decimal Rate, string PricingModel, string Status, string? LicensePlate);
+
     // ---------- Analytics ----------
 
     public record AnalyticsOverviewResult(

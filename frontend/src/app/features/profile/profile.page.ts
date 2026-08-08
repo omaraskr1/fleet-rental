@@ -10,6 +10,7 @@ import { PushService } from '../../core/services/push.service';
 import { TenantStore } from '../../core/stores/tenant.store';
 import { LocaleStore } from '../../core/stores/locale.store';
 import { PreferencesToggleComponent } from '../../shared/preferences-toggle.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-profile',
@@ -55,11 +56,13 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
         </div>
       }
 
-      <div class="switch">
-        <ion-button expand="block" fill="clear" size="small" (click)="switchCompany()">
-          {{ locale.t('profile.switchCompany', { company: tenant.name() }) }}
-        </ion-button>
-      </div>
+      @if (showSwitchCompany) {
+        <div class="switch">
+          <ion-button expand="block" fill="clear" size="small" (click)="switchCompany()">
+            {{ locale.t('profile.switchCompany', { company: tenant.name() }) }}
+          </ion-button>
+        </div>
+      }
     </ion-content>
   `,
   styles: `
@@ -78,6 +81,11 @@ export class ProfilePage {
   protected readonly locale = inject(LocaleStore);
   private readonly push = inject(PushService);
   private readonly router = inject(Router);
+
+  // While launching with one customer, the picker itself is skipped (see
+  // app.config.ts), so offering "switch company" here would be a dead end —
+  // there's nowhere else to switch to yet.
+  protected readonly showSwitchCompany = !environment.defaultCompanyCode;
 
   protected async signOut(): Promise<void> {
     // Unregister first: once the token is gone the API call would be rejected,

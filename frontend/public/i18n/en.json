@@ -346,5 +346,86 @@
       "InProgress": "In progress",
       "Resolved": "Resolved"
     }
+  },
+  "platform": {
+    "login": {
+      "title": "Platform administrator sign in",
+      "subtitle": "Manage every company on the platform",
+      "email": "Email",
+      "password": "Password",
+      "signInButton": "Sign in"
+    },
+    "shell": {
+      "companies": "Companies",
+      "cars": "Cars",
+      "admins": "Platform admins",
+      "signOut": "Sign out"
+    },
+    "companies": {
+      "title": "Companies",
+      "addCompany": "Add company",
+      "name": "Name",
+      "code": "Code",
+      "contactEmail": "Contact email",
+      "status": "Status",
+      "active": "Active",
+      "suspended": "Suspended",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "manageAdmins": "Admins",
+      "form": {
+        "title": "Add company",
+        "name": "Name",
+        "code": "Code",
+        "codeHelper": "Lowercase letters, digits and hyphens only — this is what clients type to reach this company.",
+        "contactEmailOptional": "Contact email (optional)",
+        "save": "Create company"
+      }
+    },
+    "companyAdmins": {
+      "title": "Admins for {{company}}",
+      "back": "Back to companies",
+      "name": "Name",
+      "email": "Email",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "addAdmin": "Add admin",
+      "form": {
+        "title": "Add company admin",
+        "fullName": "Full name",
+        "email": "Email",
+        "password": "Password",
+        "save": "Create admin"
+      },
+      "empty": "No admins yet for this company."
+    },
+    "cars": {
+      "title": "Cars across every company",
+      "addCar": "Add car",
+      "company": "Company",
+      "vehicle": "Vehicle",
+      "category": "Category",
+      "seats": "Seats",
+      "rate": "Rate",
+      "status": "Status",
+      "edit": "Edit",
+      "retire": "Retire",
+      "retireConfirm": "Retire this vehicle?",
+      "retireConfirmButton": "Confirm retire",
+      "form": {
+        "addTitle": "Add car",
+        "editTitle": "Edit car",
+        "company": "Company",
+        "name": "Name",
+        "description": "Description",
+        "category": "Category",
+        "seats": "Seats",
+        "rate": "Rate",
+        "pricingModel": "Pricing model",
+        "licensePlateOptional": "License plate (optional)",
+        "save": "Save"
+      }
+    }
   }
 }
