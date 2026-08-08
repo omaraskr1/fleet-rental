@@ -496,3 +496,14 @@ export interface CreatePlatformCarRequest {
   pricingModel: PricingModel;
   licensePlate?: string | null;
 }
+
+// ---------- Feature toggles ----------
+
+export type FeatureKey = 'Analytics' | 'Maintenance' | 'Gps' | 'PushNotifications';
+
+export const FEATURE_KEYS: FeatureKey[] = ['Analytics', 'Maintenance', 'Gps', 'PushNotifications'];
+
+export interface FeatureToggle {
+  key: FeatureKey;
+  isEnabled: boolean;
+}

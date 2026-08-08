@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminGuard, authGuard, guestGuard } from './core/guards/auth.guard';
+import { analyticsFeatureGuard, maintenanceFeatureGuard } from './core/guards/feature.guard';
 import { platformAuthGuard, platformGuestGuard } from './core/guards/platform-auth.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
 
@@ -121,21 +122,25 @@ export const routes: Routes = [
       },
       {
         path: 'fleet/:carId/maintenance',
+        canActivate: [maintenanceFeatureGuard],
         loadComponent: () =>
           import('./features/admin/admin-car-maintenance.page').then((m) => m.AdminCarMaintenancePage),
       },
       {
         path: 'issues',
+        canActivate: [maintenanceFeatureGuard],
         loadComponent: () =>
           import('./features/admin/admin-issues.page').then((m) => m.AdminIssuesPage),
       },
       {
         path: 'services',
+        canActivate: [maintenanceFeatureGuard],
         loadComponent: () =>
           import('./features/admin/admin-service-catalog.page').then((m) => m.AdminServiceCatalogPage),
       },
       {
         path: 'analytics',
+        canActivate: [analyticsFeatureGuard],
         loadComponent: () =>
           import('./features/admin/admin-analytics.page').then((m) => m.AdminAnalyticsPage),
       },
@@ -169,6 +174,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/platform/platform-company-admins.page').then(
             (m) => m.PlatformCompanyAdminsPage,
+          ),
+      },
+      {
+        path: 'companies/:tenantId/features',
+        loadComponent: () =>
+          import('./features/platform/platform-company-features.page').then(
+            (m) => m.PlatformCompanyFeaturesPage,
           ),
       },
       {

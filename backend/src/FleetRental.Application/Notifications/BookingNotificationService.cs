@@ -1,4 +1,5 @@
 using FleetRental.Application.Abstractions;
+using FleetRental.Application.Platform;
 using FleetRental.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ namespace FleetRental.Application.Notifications;
 public class BookingNotificationService(
     IFleetRentalDbContext db,
     IEnumerable<INotificationSender> senders,
+    TenantFeatureGate features,
     ILogger<BookingNotificationService> logger)
 {
     public async Task NotifyDecisionAsync(Guid bookingId, CancellationToken cancellationToken = default)
@@ -66,10 +68,17 @@ public class BookingNotificationService(
             },
         };
 
+        var pushEnabled = await features.IsEnabledForAsync(booking.TenantId, FeatureKey.PushNotifications, cancellationToken);
         var delivered = false;
 
         foreach (var sender in senders)
         {
+            // Email is never gated — only push is a per-company toggle.
+            if (sender.Channel == "Push" && !pushEnabled)
+            {
+                continue;
+            }
+
             try
             {
                 await sender.SendAsync(message, cancellationToken);

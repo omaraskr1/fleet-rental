@@ -26,6 +26,8 @@ import type {
   CreatePlatformCarRequest,
   DevicePlatform,
   EventTypeBreakdown,
+  FeatureKey,
+  FeatureToggle,
   FleetAvailability,
   IsoDate,
   IssueStatus,
@@ -415,6 +417,26 @@ export class ApiService {
 
   retirePlatformCar(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.base}/platform/cars/${id}`));
+  }
+
+  // ---------- Feature toggles ----------
+
+  getFeatures(): Promise<FeatureToggle[]> {
+    return firstValueFrom(this.http.get<FeatureToggle[]>(`${this.base}/features`));
+  }
+
+  getCompanyFeatures(tenantId: string): Promise<FeatureToggle[]> {
+    return firstValueFrom(
+      this.http.get<FeatureToggle[]>(`${this.base}/platform/companies/${tenantId}/features`),
+    );
+  }
+
+  setCompanyFeature(tenantId: string, key: FeatureKey, isEnabled: boolean): Promise<FeatureToggle> {
+    return firstValueFrom(
+      this.http.put<FeatureToggle>(`${this.base}/platform/companies/${tenantId}/features/${key}`, {
+        isEnabled,
+      }),
+    );
   }
 
   private rangeParams(from?: IsoDate, to?: IsoDate): HttpParams {

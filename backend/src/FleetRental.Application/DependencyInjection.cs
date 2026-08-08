@@ -29,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<PlatformAdminService>();
         services.AddScoped<PlatformCompanyService>();
         services.AddScoped<PlatformCarService>();
+        services.AddScoped<PlatformFeatureService>();
+        services.AddScoped<TenantFeatureGate>();
 
         return services;
     }

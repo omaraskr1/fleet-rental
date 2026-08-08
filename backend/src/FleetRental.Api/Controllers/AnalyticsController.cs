@@ -1,3 +1,4 @@
+using FleetRental.Api.Filters;
 using FleetRental.Application.Analytics;
 using FleetRental.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,7 @@ namespace FleetRental.Api.Controllers;
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
+[RequireFeature(FeatureKey.Analytics)]
 [Route("/api/analytics")]
 public class AnalyticsController(AnalyticsService analytics) : ControllerBase
 {

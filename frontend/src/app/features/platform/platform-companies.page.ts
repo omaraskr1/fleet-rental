@@ -75,6 +75,9 @@ import { LocaleStore } from '../../core/stores/locale.store';
                   <ion-button size="small" fill="clear" (click)="manageAdmins(company.id)">
                     {{ locale.t('platform.companies.manageAdmins') }}
                   </ion-button>
+                  <ion-button size="small" fill="clear" (click)="manageFeatures(company.id)">
+                    {{ locale.t('platform.companies.manageFeatures') }}
+                  </ion-button>
                   @if (company.status === 'Active') {
                     <ion-button size="small" fill="clear" color="danger" (click)="suspend(company.id)">
                       {{ locale.t('platform.companies.suspend') }}
@@ -154,5 +157,9 @@ export class PlatformCompaniesPage implements OnInit {
 
   protected manageAdmins(tenantId: string): void {
     void this.router.navigate(['/platform/companies', tenantId, 'admins']);
+  }
+
+  protected manageFeatures(tenantId: string): void {
+    void this.router.navigate(['/platform/companies', tenantId, 'features']);
   }
 }

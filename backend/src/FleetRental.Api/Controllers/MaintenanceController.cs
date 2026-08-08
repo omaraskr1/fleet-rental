@@ -1,4 +1,5 @@
 using FleetRental.Api.Extensions;
+using FleetRental.Api.Filters;
 using FleetRental.Application.Maintenance;
 using FleetRental.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +13,7 @@ namespace FleetRental.Api.Controllers;
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
+[RequireFeature(FeatureKey.Maintenance)]
 public class MaintenanceController(MaintenanceService maintenance) : ControllerBase
 {
     [HttpGet("/api/cars/{carId:guid}/maintenance")]

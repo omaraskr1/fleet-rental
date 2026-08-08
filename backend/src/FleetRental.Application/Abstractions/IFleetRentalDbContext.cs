@@ -42,6 +42,8 @@ public interface IFleetRentalDbContext
 
     DbSet<VehicleIssue> VehicleIssues { get; }
 
+    DbSet<TenantFeatureToggle> TenantFeatureToggles { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

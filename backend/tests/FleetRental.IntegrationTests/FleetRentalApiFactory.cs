@@ -101,6 +101,7 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             DELETE FROM VehicleIssues;
             DELETE FROM Cars;
             DELETE FROM Users;
+            DELETE FROM TenantFeatureToggles;
             DELETE FROM Tenants;
             DELETE FROM PlatformAdmins;
             """);
@@ -159,6 +160,21 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await db.SaveChangesAsync();
 
         return (email, password);
+    }
+
+    /// <summary>Sets a feature-toggle override directly, as if a platform admin had set it.</summary>
+    public async Task SetFeatureAsync(Guid tenantId, FeatureKey key, bool isEnabled)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        using var _ = tenantContext.BypassIsolation();
+
+        var toggle = TenantFeatureToggle.Create(key, isEnabled);
+        toggle.AssignTenant(tenantId);
+        db.TenantFeatureToggles.Add(toggle);
+        await db.SaveChangesAsync();
     }
 
     /// <summary>Creates an administrator inside a tenant and returns their credentials.</summary>

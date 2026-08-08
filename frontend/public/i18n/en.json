@@ -373,6 +373,7 @@
       "suspend": "Suspend",
       "reactivate": "Reactivate",
       "manageAdmins": "Admins",
+      "manageFeatures": "Features",
       "form": {
         "title": "Add company",
         "name": "Name",
@@ -399,6 +400,27 @@
         "save": "Create admin"
       },
       "empty": "No admins yet for this company."
+    },
+    "companyFeatures": {
+      "title": "Features for {{company}}",
+      "feature": {
+        "Analytics": {
+          "name": "Analytics dashboard",
+          "description": "Revenue, utilization, profitability, and demand-forecasting dashboards."
+        },
+        "Maintenance": {
+          "name": "Maintenance & service catalog",
+          "description": "Vehicle issues, the service catalog, and per-car maintenance tracking."
+        },
+        "Gps": {
+          "name": "GPS tracking",
+          "description": "Location capture and the owner's live map view of the fleet."
+        },
+        "PushNotifications": {
+          "name": "Push notifications",
+          "description": "Delivers booking decisions by push in addition to email."
+        }
+      }
     },
     "cars": {
       "title": "Cars across every company",

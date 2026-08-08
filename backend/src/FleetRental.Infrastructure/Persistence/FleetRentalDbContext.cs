@@ -55,6 +55,8 @@ public class FleetRentalDbContext(
 
     public DbSet<VehicleIssue> VehicleIssues => Set<VehicleIssue>();
 
+    public DbSet<TenantFeatureToggle> TenantFeatureToggles => Set<TenantFeatureToggle>();
+
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
