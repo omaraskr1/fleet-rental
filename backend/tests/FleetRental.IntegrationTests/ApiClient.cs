@@ -166,6 +166,13 @@ public class ApiClient(HttpClient http)
 
     public record MaintenanceCostPointResult(string PeriodLabel, string PeriodStart, decimal TotalCost, int RecordCount);
 
+    public record DemandPointResult(string PeriodLabel, string PeriodStart, double BookedDays);
+
+    public record CategoryDemandResult(
+        string Category, int CarCount, bool HasSufficientHistory,
+        DemandPointResult[] History, DemandPointResult[] Forecast,
+        string Trend, double RecentMonthlyAverage, double ForecastMonthlyAverage);
+
     public record CarProfitabilityResult(
         Guid CarId, string CarName, decimal EstimatedRevenue, decimal MaintenanceCost,
         decimal NetProfit, double? ProfitMarginPercent, double UtilizationPercent,

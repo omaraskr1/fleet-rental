@@ -112,7 +112,7 @@ public sealed record RevenueForecastPointDto
 
 /// <summary>
 /// History plus projection. <see cref="HasSufficientHistory"/> is false whenever there
-/// are fewer than <see cref="RevenueForecaster.MinimumHistoryMonths"/> complete months on
+/// are fewer than <see cref="SeriesForecaster.MinimumHistoryMonths"/> complete months on
 /// file — the caller must check it before showing <see cref="Forecast"/>, which is empty
 /// in that case rather than a guess dressed up as a number.
 /// </summary>
@@ -189,4 +189,60 @@ public sealed record BookingApprovalPredictionsDto
     public required int MinimumRequired { get; init; }
 
     public required IReadOnlyList<BookingApprovalPredictionDto> Predictions { get; init; }
+}
+
+/// <summary>Where demand for a category is heading, relative to how it has recently behaved.</summary>
+public enum DemandTrend
+{
+    /// <summary>Not enough settled months to say — never presented as "steady".</summary>
+    Unknown,
+
+    Rising,
+
+    Steady,
+
+    Declining,
+}
+
+/// <summary>One month of demand for a category, measured in booked car-days.</summary>
+public sealed record DemandPointDto
+{
+    public required string PeriodLabel { get; init; }
+
+    public required DateOnly PeriodStart { get; init; }
+
+    public required double BookedDays { get; init; }
+}
+
+/// <summary>
+/// Forecast demand for one vehicle category, paired with how many cars of that
+/// category the fleet currently owns — the two numbers together are what answer
+/// "should I buy another one of these, or is one already sitting idle."
+/// </summary>
+/// <remarks>
+/// Demand is measured in booked car-days rather than revenue on purpose: revenue
+/// mixes demand with whatever the daily rate happens to be, so a category whose
+/// price was raised would look like growing demand when nothing about the demand
+/// changed.
+/// </remarks>
+public sealed record CategoryDemandDto
+{
+    public required string Category { get; init; }
+
+    /// <summary>Cars of this category in the fleet today — the capacity side of the comparison.</summary>
+    public required int CarCount { get; init; }
+
+    public required bool HasSufficientHistory { get; init; }
+
+    public required IReadOnlyList<DemandPointDto> History { get; init; }
+
+    public required IReadOnlyList<DemandPointDto> Forecast { get; init; }
+
+    public required DemandTrend Trend { get; init; }
+
+    /// <summary>Mean booked days across the recent months the trend is judged against.</summary>
+    public required double RecentMonthlyAverage { get; init; }
+
+    /// <summary>Mean booked days across the forecast horizon. Zero when there is no forecast.</summary>
+    public required double ForecastMonthlyAverage { get; init; }
 }

@@ -138,7 +138,7 @@ public class AnalyticsService(IFleetRentalDbContext db)
         var historyStart = new DateOnly(earliestBookingStart.Value.Year, earliestBookingStart.Value.Month, 1);
         var history = await GetRevenueTrendAsync(historyStart, historyEnd, cancellationToken);
 
-        var forecast = RevenueForecaster.Run([.. history.Select(h => (float)h.EstimatedRevenue)], horizonMonths);
+        var forecast = SeriesForecaster.Run([.. history.Select(h => (float)h.EstimatedRevenue)], horizonMonths);
 
         if (!forecast.HasSufficientHistory)
         {
@@ -298,6 +298,88 @@ public class AnalyticsService(IFleetRentalDbContext db)
         EventType EventType,
         int? ExpectedAttendance,
         CarCategory CarCategory);
+
+    /// <summary>
+    /// Forecasts demand per vehicle category, so a fleet owner can see which kinds
+    /// of vehicle to buy more of and which are losing interest — the composition
+    /// question, as opposed to the per-car keep-or-retire one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// One SSA model per category rather than one over the fleet: a rising SUV
+    /// trend and a collapsing convertible trend average out to "steady" if pooled,
+    /// which is precisely the signal worth having.
+    /// </para>
+    /// <para>
+    /// Only categories the fleet actually owns cars in are reported. Forecasting
+    /// demand for a bus nobody owns would be arithmetically possible — bookings
+    /// against it are always zero — and completely useless.
+    /// </para>
+    /// </remarks>
+    public async Task<IReadOnlyList<CategoryDemandDto>> GetCategoryDemandAsync(
+        int horizonMonths = 3, CancellationToken cancellationToken = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        var currentMonthStart = new DateOnly(today.Year, today.Month, 1);
+        // Same reasoning as the revenue forecast: the still-accruing current month
+        // would read as a demand collapse to a model trained mid-month.
+        var historyEnd = currentMonthStart.AddDays(-1);
+
+        var carCounts = await db.Cars
+            .GroupBy(c => c.Category)
+            .Select(g => new { Category = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Category, x => x.Count, cancellationToken);
+
+        if (carCounts.Count == 0)
+        {
+            return [];
+        }
+
+        var bookings = await db.Bookings
+            .Where(b => b.Status == BookingStatus.Approved && b.Period.Start <= historyEnd)
+            .Select(b => new { b.Car.Category, b.Period.Start, b.Period.End })
+            .ToListAsync(cancellationToken);
+
+        var earliest = bookings.Count == 0 ? (DateOnly?)null : bookings.Min(b => b.Start);
+        if (earliest is null)
+        {
+            // No settled demand anywhere in the fleet: report the categories with
+            // their capacity so the screen still lists them, but claim nothing.
+            return [.. carCounts
+                .Select(c => CategoryDemandAnalyzer.NoHistory(c.Key.ToString(), c.Value))
+                .OrderBy(d => d.Category)];
+        }
+
+        var historyStart = new DateOnly(earliest.Value.Year, earliest.Value.Month, 1);
+        var months = EnumerateMonths(historyStart, historyEnd).ToList();
+
+        var result = carCounts
+            .Select(entry => CategoryDemandAnalyzer.Analyze(
+                entry.Key.ToString(),
+                entry.Value,
+                MonthlyDemand(months, [.. bookings.Where(b => b.Category == entry.Key).Select(b => (b.Start, b.End))]),
+                currentMonthStart,
+                horizonMonths))
+            .OrderByDescending(d => d.ForecastMonthlyAverage)
+            .ThenBy(d => d.Category);
+
+        return [.. result];
+    }
+
+    /// <summary>Booked car-days per month for one category's bookings.</summary>
+    private static List<DemandPointDto> MonthlyDemand(
+        IReadOnlyList<DateOnly> months,
+        IReadOnlyList<(DateOnly Start, DateOnly End)> bookings) =>
+        [.. months.Select(monthStart =>
+        {
+            var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+            return new DemandPointDto
+            {
+                PeriodLabel = monthStart.ToString("MMM yyyy"),
+                PeriodStart = monthStart,
+                BookedDays = bookings.Sum(b => OverlapDays(b.Start, b.End, monthStart, monthEnd)),
+            };
+        })];
 
     /// <summary>Demand per car — which vehicles carry the fleet and which sit idle.</summary>
     public async Task<IReadOnlyList<CarUtilizationDto>> GetUtilizationAsync(

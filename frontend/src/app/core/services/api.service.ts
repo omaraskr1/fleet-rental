@@ -15,6 +15,7 @@ import type {
   CarMaintenanceSummary,
   CarProfitability,
   CarUtilization,
+  CategoryDemand,
   CreateBookingRequest,
   CreateCarRequest,
   DevicePlatform,
@@ -278,6 +279,14 @@ export class ApiService {
     return firstValueFrom(
       this.http.get<MaintenanceCostPoint[]>(`${this.base}/analytics/maintenance-costs`, {
         params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getCategoryDemand(months = 3): Promise<CategoryDemand[]> {
+    return firstValueFrom(
+      this.http.get<CategoryDemand[]>(`${this.base}/analytics/category-demand`, {
+        params: new HttpParams().set('months', months),
       }),
     );
   }

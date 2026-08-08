@@ -10,12 +10,19 @@ namespace FleetRental.Application.Analytics;
 /// a database.
 /// </summary>
 /// <remarks>
+/// <para>
+/// Deliberately unaware of what the numbers mean — it forecasts monthly revenue and
+/// per-category booked days equally well, and naming it for either would mislead the
+/// next caller. The units live with the caller; only the shape of the series matters here.
+/// </para>
+/// <para>
 /// SSA needs enough history to separate signal from noise — <see cref="MinimumHistoryMonths"/>
 /// is the line between "forecast" and "guess", and callers must check
 /// <see cref="Forecast.HasSufficientHistory"/> before showing anything to a user, the same way
 /// <c>Car.ServiceIntervalKm</c> being unset means "not tracked", never "definitely fine."
+/// </para>
 /// </remarks>
-public static class RevenueForecaster
+public static class SeriesForecaster
 {
     /// <summary>Fewer months than this and SSA has too little signal to separate from noise.</summary>
     public const int MinimumHistoryMonths = 6;

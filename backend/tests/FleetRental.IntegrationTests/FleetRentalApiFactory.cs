@@ -159,18 +159,23 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         return (email, password);
     }
 
-    /// <summary>Creates a bookable car inside a tenant and returns its id.</summary>
+    /// <summary>
+    /// Creates a bookable car inside a tenant and returns its id. The category
+    /// defaults to Van so existing tests are unaffected; the per-category demand
+    /// tests are the reason it can be varied at all.
+    /// </summary>
     public async Task<Guid> SeedCarAsync(
         Guid? tenantId = null,
         string name = "Test Car",
-        CarStatus status = CarStatus.Active)
+        CarStatus status = CarStatus.Active,
+        CarCategory category = CarCategory.Van)
     {
         var tenant = tenantId ?? await SeedTenantAsync();
         Guid carId = Guid.Empty;
 
         await InTenantScopeAsync(tenant, (db, _) =>
         {
-            var car = Car.Create(name, "Seeded for tests", CarCategory.Van, 8, 300m);
+            var car = Car.Create(name, "Seeded for tests", category, 8, 300m);
             car.AddPhoto("https://example.com/car.jpg", name, isPrimary: true);
 
             if (status != CarStatus.Active)
