@@ -171,6 +171,12 @@ public class ApiClient(HttpClient http)
         decimal NetProfit, double? ProfitMarginPercent, double UtilizationPercent,
         int BookingCount, string Recommendation);
 
+    public record BookingApprovalPredictionResult(Guid BookingId, double ApprovalProbability);
+
+    public record BookingApprovalPredictionsResult(
+        bool HasSufficientData, int TrainedOnBookings, int MinimumRequired,
+        BookingApprovalPredictionResult[] Predictions);
+
     public record RevenueForecastPointResult(string PeriodLabel, string PeriodStart, decimal ForecastedRevenue, decimal LowerBound, decimal UpperBound);
 
     public record RevenueForecastResult(
