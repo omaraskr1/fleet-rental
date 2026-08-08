@@ -320,6 +320,26 @@ export interface MaintenanceCostPoint {
   recordCount: number;
 }
 
+export type CarProfitabilityRecommendation = 'Keep' | 'Review' | 'ConsiderRetiring';
+
+/**
+ * Revenue here is still the DailyRate x booked days estimate, so "profit" is
+ * directional — useful for ranking cars against each other, not for the books.
+ * Only maintenanceCost is real money.
+ */
+export interface CarProfitability {
+  carId: string;
+  carName: string;
+  estimatedRevenue: number;
+  maintenanceCost: number;
+  netProfit: number;
+  /** Null when there was no revenue to take a percentage of — not the same as 0%. */
+  profitMarginPercent: number | null;
+  utilizationPercent: number;
+  bookingCount: number;
+  recommendation: CarProfitabilityRecommendation;
+}
+
 export interface RevenueForecastPoint {
   periodLabel: string;
   periodStart: IsoDate;

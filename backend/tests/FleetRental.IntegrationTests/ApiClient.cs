@@ -166,6 +166,11 @@ public class ApiClient(HttpClient http)
 
     public record MaintenanceCostPointResult(string PeriodLabel, string PeriodStart, decimal TotalCost, int RecordCount);
 
+    public record CarProfitabilityResult(
+        Guid CarId, string CarName, decimal EstimatedRevenue, decimal MaintenanceCost,
+        decimal NetProfit, double? ProfitMarginPercent, double UtilizationPercent,
+        int BookingCount, string Recommendation);
+
     public record BookingApprovalPredictionResult(Guid BookingId, double ApprovalProbability);
 
     public record BookingApprovalPredictionsResult(

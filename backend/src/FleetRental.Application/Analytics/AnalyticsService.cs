@@ -334,6 +334,68 @@ public class AnalyticsService(IFleetRentalDbContext db)
         return [.. result.OrderByDescending(r => r.UtilizationPercent)];
     }
 
+    /// <summary>
+    /// Whether each car is earning its keep: estimated revenue against what was
+    /// actually spent maintaining it, worst net first so the vehicle most in need
+    /// of a decision is the one the owner sees at the top.
+    /// </summary>
+    /// <remarks>
+    /// Only the cost side is real money. Revenue remains an estimate
+    /// (<c>DailyRate × booked days</c>) until payments are recorded, so "profit"
+    /// here is directional — good for ranking one car against another, not for
+    /// the books. Every field name says "Estimated" for that reason.
+    /// </remarks>
+    public async Task<IReadOnlyList<CarProfitabilityDto>> GetProfitabilityAsync(
+        DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
+    {
+        var utilization = await GetUtilizationAsync(from, to, cancellationToken);
+
+        var maintenanceByCar = await db.ServiceRecords
+            .Where(s => s.PerformedAt >= from && s.PerformedAt <= to)
+            .GroupBy(s => s.CarId)
+            .Select(g => new { CarId = g.Key, TotalCost = g.Sum(s => s.Cost) })
+            .ToDictionaryAsync(x => x.CarId, x => x.TotalCost, cancellationToken);
+
+        var result = utilization.Select(car =>
+        {
+            var maintenanceCost = maintenanceByCar.GetValueOrDefault(car.CarId);
+            var netProfit = car.EstimatedRevenue - maintenanceCost;
+
+            return new CarProfitabilityDto
+            {
+                CarId = car.CarId,
+                CarName = car.CarName,
+                EstimatedRevenue = car.EstimatedRevenue,
+                MaintenanceCost = maintenanceCost,
+                NetProfit = netProfit,
+                // A percentage of nothing is not zero, it is undefined — a car that
+                // earned nothing and cost nothing should not read as "0% margin"
+                // alongside one that genuinely broke even on real money.
+                ProfitMarginPercent = car.EstimatedRevenue == 0
+                    ? null
+                    : Math.Round((double)(netProfit / car.EstimatedRevenue) * 100, 1),
+                UtilizationPercent = car.UtilizationPercent,
+                BookingCount = car.BookingCount,
+                Recommendation = Recommend(netProfit, car.UtilizationPercent),
+            };
+        });
+
+        return [.. result.OrderBy(r => r.NetProfit)];
+    }
+
+    /// <summary>
+    /// Deliberately a plain rule, not a model. The thresholds are a starting point
+    /// for a conversation with the owner, which is why the DTO carries the numbers
+    /// that produced them rather than the verdict alone.
+    /// </summary>
+    private static CarProfitabilityRecommendation Recommend(decimal netProfit, double utilizationPercent) =>
+        netProfit < 0 ? CarProfitabilityRecommendation.ConsiderRetiring
+        : utilizationPercent < IdleUtilizationThresholdPercent ? CarProfitabilityRecommendation.Review
+        : CarProfitabilityRecommendation.Keep;
+
+    /// <summary>Below this, a car is earning something but mostly sitting still.</summary>
+    private const double IdleUtilizationThresholdPercent = 10.0;
+
     /// <summary>What kind of occasion books this fleet, and how much of that demand converts.</summary>
     public async Task<IReadOnlyList<EventTypeBreakdownDto>> GetEventTypeBreakdownAsync(
         DateOnly from, DateOnly to, CancellationToken cancellationToken = default)

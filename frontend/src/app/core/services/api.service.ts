@@ -13,6 +13,7 @@ import type {
   CarDetail,
   CarListItem,
   CarMaintenanceSummary,
+  CarProfitability,
   CarUtilization,
   CreateBookingRequest,
   CreateCarRequest,
@@ -276,6 +277,14 @@ export class ApiService {
   getMaintenanceCostTrend(from?: IsoDate, to?: IsoDate): Promise<MaintenanceCostPoint[]> {
     return firstValueFrom(
       this.http.get<MaintenanceCostPoint[]>(`${this.base}/analytics/maintenance-costs`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getProfitability(from?: IsoDate, to?: IsoDate): Promise<CarProfitability[]> {
+    return firstValueFrom(
+      this.http.get<CarProfitability[]>(`${this.base}/analytics/profitability`, {
         params: this.rangeParams(from, to),
       }),
     );
