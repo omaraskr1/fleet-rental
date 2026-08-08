@@ -59,6 +59,15 @@ public class AnalyticsController(AnalyticsService analytics) : ControllerBase
         return Ok(await analytics.GetMaintenanceCostTrendAsync(f, t, ct));
     }
 
+    [HttpGet("profitability")]
+    [ProducesResponseType<IReadOnlyList<CarProfitabilityDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CarProfitabilityDto>>> GetProfitability(
+        [FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken ct)
+    {
+        var (f, t) = ResolveRange(from, to);
+        return Ok(await analytics.GetProfitabilityAsync(f, t, ct));
+    }
+
     /// <summary>Forecast demand per vehicle category, for fleet composition decisions.</summary>
     [HttpGet("category-demand")]
     [ProducesResponseType<IReadOnlyList<CategoryDemandDto>>(StatusCodes.Status200OK)]
