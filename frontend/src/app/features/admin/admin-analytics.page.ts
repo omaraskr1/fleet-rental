@@ -6,6 +6,8 @@ import { ApiService } from '../../core/services/api.service';
 import { LocaleStore } from '../../core/stores/locale.store';
 import type {
   AnalyticsOverview,
+  CarProfitability,
+  CarProfitabilityRecommendation,
   CarUtilization,
   EventTypeBreakdown,
   MaintenanceCostPoint,
@@ -77,6 +79,55 @@ import type {
           <span class="value">{{ formatMoney(ov.maintenanceCost) }}</span>
         </div>
       </div>
+
+      <section class="chart-card">
+        <h2>{{ locale.t('admin.analytics.profitability') }}</h2>
+        @if (profitability().length === 0) {
+          <p class="state small">{{ locale.t('admin.analytics.noData') }}</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ locale.t('admin.analytics.vehicle') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.revenue') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.cost') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.netProfit') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.margin') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.utilization') }}</th>
+                  <th>{{ locale.t('admin.analytics.recommendation') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (car of profitability(); track car.carId) {
+                  <tr>
+                    <td>
+                      <span class="link" (click)="openMaintenance(car.carId)">{{ car.carName }}</span>
+                    </td>
+                    <td class="num">{{ formatMoney(car.estimatedRevenue) }}</td>
+                    <td class="num">{{ formatMoney(car.maintenanceCost) }}</td>
+                    <td class="num" [class.negative]="car.netProfit < 0">{{ formatMoney(car.netProfit) }}</td>
+                    <td class="num">
+                      @if (car.profitMarginPercent === null) {
+                        {{ locale.t('admin.analytics.notApplicable') }}
+                      } @else {
+                        {{ car.profitMarginPercent }}%
+                      }
+                    </td>
+                    <td class="num">{{ car.utilizationPercent }}%</td>
+                    <td>
+                      <span class="verdict" [class]="verdictClass(car.recommendation)">
+                        {{ locale.t('admin.analytics.recommend' + car.recommendation) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="footnote">{{ locale.t('admin.analytics.profitabilityNote') }}</p>
+        }
+      </section>
 
       <section class="chart-card forecast-card">
         <h2>{{ locale.t('admin.analytics.revenueForecast') }}</h2>
@@ -225,6 +276,22 @@ import type {
     .bar-value { position: absolute; top: -18px; font-size: 0.65rem; white-space: nowrap; color: var(--ion-color-medium); }
     .bar-label { font-size: 0.68rem; color: var(--ion-color-medium); margin-top: 6px; white-space: nowrap; }
 
+    /* Wide tables scroll inside their own card rather than pushing the page sideways. */
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 8px 10px; text-align: start; white-space: nowrap;
+             border-bottom: 1px solid var(--ion-color-light-shade); }
+    th { font-weight: 600; font-size: 0.75rem; color: var(--ion-color-medium); }
+    tbody tr:last-child td { border-bottom: none; }
+    td.num, th.num { text-align: end; font-variant-numeric: tabular-nums; }
+    td.negative { color: var(--ion-color-danger); font-weight: 600; }
+    td .link { cursor: pointer; color: var(--ion-color-primary); }
+    .verdict { font-size: 0.72rem; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
+    .verdict.keep { background: var(--ion-color-success-tint); color: var(--ion-color-success-shade); }
+    .verdict.review { background: var(--ion-color-warning-tint); color: var(--ion-color-warning-shade); }
+    .verdict.retire { background: var(--ion-color-danger-tint); color: var(--ion-color-danger-shade); }
+    .footnote { font-size: 0.72rem; color: var(--ion-color-medium); margin: 12px 0 0; white-space: normal; }
+
     .legend { display: flex; align-items: center; gap: 6px; font-size: 0.72rem;
               color: var(--ion-color-medium); margin: 12px 0 0; }
     .legend .swatch { width: 10px; height: 10px; border-radius: 2px; background: var(--ion-color-primary);
@@ -255,6 +322,7 @@ export class AdminAnalyticsPage implements OnInit {
   protected readonly eventTypes = signal<EventTypeBreakdown[]>([]);
   protected readonly maintenanceTrend = signal<MaintenanceCostPoint[]>([]);
   protected readonly revenueForecast = signal<RevenueForecast | null>(null);
+  protected readonly profitability = signal<CarProfitability[]>([]);
 
   protected readonly maxRevenue = computed(() =>
     Math.max(1, ...this.revenueTrend().map((p) => p.estimatedRevenue)),
@@ -293,7 +361,7 @@ export class AdminAnalyticsPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [overview, revenueTrend, utilization, eventTypes, maintenanceTrend, revenueForecast] =
+      const [overview, revenueTrend, utilization, eventTypes, maintenanceTrend, revenueForecast, profitability] =
         await Promise.all([
           this.api.getAnalyticsOverview(),
           this.api.getRevenueTrend(),
@@ -301,6 +369,7 @@ export class AdminAnalyticsPage implements OnInit {
           this.api.getEventTypeBreakdown(),
           this.api.getMaintenanceCostTrend(),
           this.api.getRevenueForecast(),
+          this.api.getProfitability(),
         ]);
       this.overview.set(overview);
       this.revenueTrend.set(revenueTrend);
@@ -308,6 +377,7 @@ export class AdminAnalyticsPage implements OnInit {
       this.eventTypes.set(eventTypes);
       this.maintenanceTrend.set(maintenanceTrend);
       this.revenueForecast.set(revenueForecast);
+      this.profitability.set(profitability);
     } catch {
       this.error.set(this.locale.t('admin.analytics.loadError'));
     } finally {
@@ -328,6 +398,17 @@ export class AdminAnalyticsPage implements OnInit {
    */
   protected formatMoney(value: number): string {
     return new Intl.NumberFormat(this.locale.intlLocale(), { maximumFractionDigits: 0 }).format(value);
+  }
+
+  protected verdictClass(recommendation: CarProfitabilityRecommendation): string {
+    switch (recommendation) {
+      case 'ConsiderRetiring':
+        return 'retire';
+      case 'Review':
+        return 'review';
+      default:
+        return 'keep';
+    }
   }
 
   protected openMaintenance(carId: string): void {
