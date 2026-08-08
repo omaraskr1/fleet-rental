@@ -147,4 +147,22 @@ public class ApiClient(HttpClient http)
     public record AvailabilityResult(Guid CarId, string[] BookedDates, string[] PendingDates, bool CarIsBookable);
 
     public record ProblemResult(int Status, string Title, string Detail);
+
+    // ---------- Analytics ----------
+
+    public record AnalyticsOverviewResult(
+        string From, string To, int TotalCars, int ActiveCars, int TotalBookings,
+        int PendingBookings, int ApprovedBookings, int RejectedBookings, int CancelledBookings,
+        double ApprovalRatePercent, decimal EstimatedRevenue, double FleetUtilizationPercent,
+        int OpenIssueCount, int CriticalIssueCount, int CarsServiceDue, decimal MaintenanceCost);
+
+    public record RevenuePointResult(string PeriodLabel, string PeriodStart, decimal EstimatedRevenue, int ApprovedBookings);
+
+    public record CarUtilizationResult(
+        Guid CarId, string CarName, int BookedDays, int DaysInRange,
+        double UtilizationPercent, int BookingCount, decimal EstimatedRevenue);
+
+    public record EventTypeBreakdownResult(string EventType, int BookingCount, int ApprovedCount, decimal EstimatedRevenue);
+
+    public record MaintenanceCostPointResult(string PeriodLabel, string PeriodStart, decimal TotalCost, int RecordCount);
 }

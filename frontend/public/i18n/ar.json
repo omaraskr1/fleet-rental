@@ -219,6 +219,26 @@
       "reopen": "إعادة الفتح",
       "resolutionNotesPlaceholder": "ما الذي تم فعله لإصلاحه (اختياري)",
       "empty": "لا توجد أعطال مطابقة لهذا الفلتر."
+    },
+    "analytics": {
+      "title": "التحليلات",
+      "estimatedRevenue": "الإيراد التقديري",
+      "utilization": "معدل استخدام الأسطول",
+      "approvalRate": "معدل الموافقة",
+      "activeCars": "المركبات النشطة",
+      "bookings": "الحجوزات",
+      "pending": "قيد الانتظار",
+      "approved": "معتمد",
+      "openIssues": "الأعطال المفتوحة",
+      "critical": "حرج",
+      "serviceDue": "مركبات بحاجة لصيانة",
+      "maintenanceCost": "تكلفة الصيانة",
+      "revenueTrend": "الإيراد التقديري حسب الشهر",
+      "maintenanceCostTrend": "تكلفة الصيانة حسب الشهر",
+      "utilizationByCar": "معدل الاستخدام حسب المركبة",
+      "demandByEventType": "الطلب حسب نوع الفعالية",
+      "noData": "لا توجد بيانات في هذا النطاق حتى الآن.",
+      "loadError": "تعذر تحميل التحليلات. حاول مرة أخرى."
     }
   },
   "enums": {

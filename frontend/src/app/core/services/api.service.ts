@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import type {
+  AnalyticsOverview,
   AuthResponse,
   AvailabilityCheck,
   Booking,
@@ -12,14 +13,18 @@ import type {
   CarDetail,
   CarListItem,
   CarMaintenanceSummary,
+  CarUtilization,
   CreateBookingRequest,
   CreateCarRequest,
   DevicePlatform,
+  EventTypeBreakdown,
   FleetAvailability,
   IsoDate,
   IssueStatus,
   LogServiceRequest,
+  MaintenanceCostPoint,
   ReportIssueRequest,
+  RevenuePoint,
   ServiceRecord,
   UpdateCarRequest,
   VehicleIssue,
@@ -224,5 +229,54 @@ export class ApiService {
     return firstValueFrom(
       this.http.post<VehicleIssue>(`${this.base}/issues/${issueId}/reopen`, {}),
     );
+  }
+
+  // ---------- Analytics ----------
+
+  getAnalyticsOverview(from?: IsoDate, to?: IsoDate): Promise<AnalyticsOverview> {
+    return firstValueFrom(
+      this.http.get<AnalyticsOverview>(`${this.base}/analytics/overview`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getRevenueTrend(from?: IsoDate, to?: IsoDate): Promise<RevenuePoint[]> {
+    return firstValueFrom(
+      this.http.get<RevenuePoint[]>(`${this.base}/analytics/revenue`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getUtilization(from?: IsoDate, to?: IsoDate): Promise<CarUtilization[]> {
+    return firstValueFrom(
+      this.http.get<CarUtilization[]>(`${this.base}/analytics/utilization`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getEventTypeBreakdown(from?: IsoDate, to?: IsoDate): Promise<EventTypeBreakdown[]> {
+    return firstValueFrom(
+      this.http.get<EventTypeBreakdown[]>(`${this.base}/analytics/event-types`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getMaintenanceCostTrend(from?: IsoDate, to?: IsoDate): Promise<MaintenanceCostPoint[]> {
+    return firstValueFrom(
+      this.http.get<MaintenanceCostPoint[]>(`${this.base}/analytics/maintenance-costs`, {
+        params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  private rangeParams(from?: IsoDate, to?: IsoDate): HttpParams {
+    let params = new HttpParams();
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return params;
   }
 }

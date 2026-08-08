@@ -117,6 +117,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/admin-issues.page').then((m) => m.AdminIssuesPage),
       },
+      {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./features/admin/admin-analytics.page').then((m) => m.AdminAnalyticsPage),
+      },
     ],
   },
 

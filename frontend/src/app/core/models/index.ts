@@ -244,3 +244,59 @@ export interface CarMaintenanceSummary {
   openIssueCount: number;
   hasBlockingIssue: boolean;
 }
+
+// ---------- Analytics ----------
+
+/**
+ * Every revenue figure here is estimated as Car.DailyRate x booked days —
+ * Phase 1 takes no payment, so there is no billed amount to report instead.
+ */
+export interface AnalyticsOverview {
+  from: IsoDate;
+  to: IsoDate;
+  totalCars: number;
+  activeCars: number;
+  totalBookings: number;
+  pendingBookings: number;
+  approvedBookings: number;
+  rejectedBookings: number;
+  cancelledBookings: number;
+  approvalRatePercent: number;
+  estimatedRevenue: number;
+  fleetUtilizationPercent: number;
+  openIssueCount: number;
+  criticalIssueCount: number;
+  carsServiceDue: number;
+  maintenanceCost: number;
+}
+
+export interface RevenuePoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  estimatedRevenue: number;
+  approvedBookings: number;
+}
+
+export interface CarUtilization {
+  carId: string;
+  carName: string;
+  bookedDays: number;
+  daysInRange: number;
+  utilizationPercent: number;
+  bookingCount: number;
+  estimatedRevenue: number;
+}
+
+export interface EventTypeBreakdown {
+  eventType: EventType;
+  bookingCount: number;
+  approvedCount: number;
+  estimatedRevenue: number;
+}
+
+export interface MaintenanceCostPoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  totalCost: number;
+  recordCount: number;
+}

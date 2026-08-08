@@ -219,6 +219,26 @@
       "reopen": "Reopen",
       "resolutionNotesPlaceholder": "What was done to fix it (optional)",
       "empty": "No issues match this filter."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "estimatedRevenue": "Estimated revenue",
+      "utilization": "Fleet utilization",
+      "approvalRate": "Approval rate",
+      "activeCars": "Active cars",
+      "bookings": "Bookings",
+      "pending": "pending",
+      "approved": "approved",
+      "openIssues": "Open issues",
+      "critical": "critical",
+      "serviceDue": "Cars due for service",
+      "maintenanceCost": "Maintenance cost",
+      "revenueTrend": "Estimated revenue by month",
+      "maintenanceCostTrend": "Maintenance cost by month",
+      "utilizationByCar": "Utilization by car",
+      "demandByEventType": "Demand by event type",
+      "noData": "No data in this range yet.",
+      "loadError": "Could not load analytics. Please try again."
     }
   },
   "enums": {

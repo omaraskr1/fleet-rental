@@ -1,3 +1,4 @@
+using FleetRental.Application.Analytics;
 using FleetRental.Application.Auth;
 using FleetRental.Application.Availability;
 using FleetRental.Application.Bookings;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<BookingNotificationService>();
         services.AddScoped<Tenants.TenantService>();
         services.AddScoped<MaintenanceService>();
+        services.AddScoped<AnalyticsService>();
 
         return services;
     }
