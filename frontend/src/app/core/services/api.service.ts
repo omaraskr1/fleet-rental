@@ -24,6 +24,7 @@ import type {
   LogServiceRequest,
   MaintenanceCostPoint,
   ReportIssueRequest,
+  RevenueForecast,
   RevenuePoint,
   ServiceRecord,
   UpdateCarRequest,
@@ -269,6 +270,14 @@ export class ApiService {
     return firstValueFrom(
       this.http.get<MaintenanceCostPoint[]>(`${this.base}/analytics/maintenance-costs`, {
         params: this.rangeParams(from, to),
+      }),
+    );
+  }
+
+  getRevenueForecast(months = 3): Promise<RevenueForecast> {
+    return firstValueFrom(
+      this.http.get<RevenueForecast>(`${this.base}/analytics/revenue-forecast`, {
+        params: new HttpParams().set('months', months),
       }),
     );
   }

@@ -9,6 +9,7 @@ import type {
   CarUtilization,
   EventTypeBreakdown,
   MaintenanceCostPoint,
+  RevenueForecast,
   RevenuePoint,
 } from '../../core/models';
 
@@ -76,6 +77,33 @@ import type {
           <span class="value">{{ formatMoney(ov.maintenanceCost) }}</span>
         </div>
       </div>
+
+      <section class="chart-card forecast-card">
+        <h2>{{ locale.t('admin.analytics.revenueForecast') }}</h2>
+        @if (revenueForecast(); as forecast) {
+          @if (!forecast.hasSufficientHistory) {
+            <p class="state small">{{ locale.t('admin.analytics.forecastInsufficientHistory') }}</p>
+          } @else {
+            <div class="bars">
+              @for (point of forecastChartPoints(); track point.periodStart) {
+                <div class="bar-col">
+                  <div
+                    class="bar"
+                    [class.forecast]="point.isForecast"
+                    [style.height.%]="barHeight(point.value, maxForecastValue())">
+                    <span class="bar-value">{{ formatMoney(point.value) }}</span>
+                  </div>
+                  <span class="bar-label">{{ point.periodLabel }}</span>
+                </div>
+              }
+            </div>
+            <p class="legend">
+              <span class="swatch"></span>{{ locale.t('admin.analytics.actual') }}
+              <span class="swatch forecast"></span>{{ locale.t('admin.analytics.projected') }}
+            </p>
+          }
+        }
+      </section>
 
       <div class="charts">
         <section class="chart-card">
@@ -180,10 +208,12 @@ import type {
       gap: 16px;
     }
     .chart-card {
-      padding: 16px; border-radius: 10px;
+      padding: 16px; border-radius: 10px; margin-bottom: 16px;
       background: var(--ion-color-light); border: 1px solid var(--ion-color-light-shade);
     }
+    .charts .chart-card { margin-bottom: 0; }
     .chart-card h2 { font-size: 0.95rem; margin: 0 0 14px; }
+    .forecast-card { border-color: var(--ion-color-primary); }
 
     .bars { display: flex; align-items: flex-end; gap: 8px; height: 160px; overflow-x: auto; }
     .bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
@@ -191,8 +221,16 @@ import type {
     .bar { width: 100%; min-height: 2px; background: var(--ion-color-primary);
            border-radius: 4px 4px 0 0; position: relative; display: flex; justify-content: center; }
     .bar.cost { background: var(--ion-color-warning); }
+    .bar.forecast { background: transparent; border: 2px dashed var(--ion-color-primary); }
     .bar-value { position: absolute; top: -18px; font-size: 0.65rem; white-space: nowrap; color: var(--ion-color-medium); }
     .bar-label { font-size: 0.68rem; color: var(--ion-color-medium); margin-top: 6px; white-space: nowrap; }
+
+    .legend { display: flex; align-items: center; gap: 6px; font-size: 0.72rem;
+              color: var(--ion-color-medium); margin: 12px 0 0; }
+    .legend .swatch { width: 10px; height: 10px; border-radius: 2px; background: var(--ion-color-primary);
+                       display: inline-block; margin-inline-end: 4px; }
+    .legend .swatch.forecast { background: transparent; border: 2px dashed var(--ion-color-primary);
+                                margin-inline-start: 14px; }
 
     .hbar-row { display: grid; grid-template-columns: 110px 1fr 50px; align-items: center; gap: 10px; margin-bottom: 10px; }
     .hbar-label { font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -216,6 +254,7 @@ export class AdminAnalyticsPage implements OnInit {
   protected readonly utilization = signal<CarUtilization[]>([]);
   protected readonly eventTypes = signal<EventTypeBreakdown[]>([]);
   protected readonly maintenanceTrend = signal<MaintenanceCostPoint[]>([]);
+  protected readonly revenueForecast = signal<RevenueForecast | null>(null);
 
   protected readonly maxRevenue = computed(() =>
     Math.max(1, ...this.revenueTrend().map((p) => p.estimatedRevenue)),
@@ -227,20 +266,48 @@ export class AdminAnalyticsPage implements OnInit {
     Math.max(1, ...this.eventTypes().map((r) => r.bookingCount)),
   );
 
+  /** Last 6 settled months, so a fleet with years of history doesn't render an unreadable wall of bars. */
+  protected readonly forecastChartPoints = computed(() => {
+    const forecast = this.revenueForecast();
+    if (!forecast?.hasSufficientHistory) {
+      return [];
+    }
+    const recentHistory = forecast.history.slice(-6).map((p) => ({
+      periodStart: p.periodStart,
+      periodLabel: p.periodLabel,
+      value: p.estimatedRevenue,
+      isForecast: false,
+    }));
+    const projected = forecast.forecast.map((p) => ({
+      periodStart: p.periodStart,
+      periodLabel: p.periodLabel,
+      value: p.forecastedRevenue,
+      isForecast: true,
+    }));
+    return [...recentHistory, ...projected];
+  });
+
+  protected readonly maxForecastValue = computed(() =>
+    Math.max(1, ...this.forecastChartPoints().map((p) => p.value)),
+  );
+
   async ngOnInit(): Promise<void> {
     try {
-      const [overview, revenueTrend, utilization, eventTypes, maintenanceTrend] = await Promise.all([
-        this.api.getAnalyticsOverview(),
-        this.api.getRevenueTrend(),
-        this.api.getUtilization(),
-        this.api.getEventTypeBreakdown(),
-        this.api.getMaintenanceCostTrend(),
-      ]);
+      const [overview, revenueTrend, utilization, eventTypes, maintenanceTrend, revenueForecast] =
+        await Promise.all([
+          this.api.getAnalyticsOverview(),
+          this.api.getRevenueTrend(),
+          this.api.getUtilization(),
+          this.api.getEventTypeBreakdown(),
+          this.api.getMaintenanceCostTrend(),
+          this.api.getRevenueForecast(),
+        ]);
       this.overview.set(overview);
       this.revenueTrend.set(revenueTrend);
       this.utilization.set(utilization);
       this.eventTypes.set(eventTypes);
       this.maintenanceTrend.set(maintenanceTrend);
+      this.revenueForecast.set(revenueForecast);
     } catch {
       this.error.set(this.locale.t('admin.analytics.loadError'));
     } finally {

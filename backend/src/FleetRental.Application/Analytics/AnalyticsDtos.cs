@@ -95,3 +95,32 @@ public sealed record MaintenanceCostPointDto
 
     public required int RecordCount { get; init; }
 }
+
+/// <summary>One forecasted month, with the 95% confidence band SSA reports alongside its point estimate.</summary>
+public sealed record RevenueForecastPointDto
+{
+    public required string PeriodLabel { get; init; }
+
+    public required DateOnly PeriodStart { get; init; }
+
+    public required decimal ForecastedRevenue { get; init; }
+
+    public required decimal LowerBound { get; init; }
+
+    public required decimal UpperBound { get; init; }
+}
+
+/// <summary>
+/// History plus projection. <see cref="HasSufficientHistory"/> is false whenever there
+/// are fewer than <see cref="RevenueForecaster.MinimumHistoryMonths"/> complete months on
+/// file — the caller must check it before showing <see cref="Forecast"/>, which is empty
+/// in that case rather than a guess dressed up as a number.
+/// </summary>
+public sealed record RevenueForecastDto
+{
+    public required bool HasSufficientHistory { get; init; }
+
+    public required IReadOnlyList<RevenuePointDto> History { get; init; }
+
+    public required IReadOnlyList<RevenueForecastPointDto> Forecast { get; init; }
+}

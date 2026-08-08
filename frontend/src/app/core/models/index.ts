@@ -300,3 +300,22 @@ export interface MaintenanceCostPoint {
   totalCost: number;
   recordCount: number;
 }
+
+export interface RevenueForecastPoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  forecastedRevenue: number;
+  lowerBound: number;
+  upperBound: number;
+}
+
+/**
+ * HasSufficientHistory is false whenever there are fewer than six settled months
+ * on file — Forecast is empty in that case rather than a guess dressed up as a
+ * number, so the UI must check it before rendering anything.
+ */
+export interface RevenueForecast {
+  hasSufficientHistory: boolean;
+  history: RevenuePoint[];
+  forecast: RevenueForecastPoint[];
+}

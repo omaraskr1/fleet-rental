@@ -59,6 +59,12 @@ public class AnalyticsController(AnalyticsService analytics) : ControllerBase
         return Ok(await analytics.GetMaintenanceCostTrendAsync(f, t, ct));
     }
 
+    [HttpGet("revenue-forecast")]
+    [ProducesResponseType<RevenueForecastDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<RevenueForecastDto>> GetRevenueForecast(
+        [FromQuery] int months, CancellationToken ct) =>
+        Ok(await analytics.GetRevenueForecastAsync(months <= 0 ? 3 : months, ct));
+
     /// <summary>
     /// Defaults to the trailing 12 months through 3 months out, when the caller
     /// supplies neither bound. Clients book ahead of their event, often weeks or

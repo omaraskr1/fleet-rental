@@ -109,6 +109,60 @@ public class AnalyticsService(IFleetRentalDbContext db)
         })];
     }
 
+    /// <summary>
+    /// Projects <paramref name="horizonMonths"/> months of revenue past today, from an
+    /// SSA model trained on every fully-elapsed calendar month since the fleet's first
+    /// booking. The current, still-accruing month is deliberately excluded from
+    /// training — it would look like a demand collapse to the model every time this
+    /// runs before the month is over.
+    /// </summary>
+    public async Task<RevenueForecastDto> GetRevenueForecastAsync(
+        int horizonMonths = 3, CancellationToken cancellationToken = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        var currentMonthStart = new DateOnly(today.Year, today.Month, 1);
+        var historyEnd = currentMonthStart.AddDays(-1);
+
+        var earliestBookingStart = await db.Bookings
+            .OrderBy(b => b.Period.Start)
+            .Select(b => (DateOnly?)b.Period.Start)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Nothing has been booked yet, or the fleet's whole history sits inside the
+        // still-open current month — there is no settled month to train on at all.
+        if (earliestBookingStart is null || earliestBookingStart.Value > historyEnd)
+        {
+            return new RevenueForecastDto { HasSufficientHistory = false, History = [], Forecast = [] };
+        }
+
+        var historyStart = new DateOnly(earliestBookingStart.Value.Year, earliestBookingStart.Value.Month, 1);
+        var history = await GetRevenueTrendAsync(historyStart, historyEnd, cancellationToken);
+
+        var forecast = RevenueForecaster.Run([.. history.Select(h => (float)h.EstimatedRevenue)], horizonMonths);
+
+        if (!forecast.HasSufficientHistory)
+        {
+            return new RevenueForecastDto { HasSufficientHistory = false, History = history, Forecast = [] };
+        }
+
+        var forecastPoints = new List<RevenueForecastPointDto>();
+        var cursor = currentMonthStart;
+        for (var i = 0; i < horizonMonths; i++)
+        {
+            forecastPoints.Add(new RevenueForecastPointDto
+            {
+                PeriodLabel = cursor.ToString("MMM yyyy"),
+                PeriodStart = cursor,
+                ForecastedRevenue = ToNonNegativeDecimal(forecast.Values[i]),
+                LowerBound = ToNonNegativeDecimal(forecast.LowerBound[i]),
+                UpperBound = ToNonNegativeDecimal(forecast.UpperBound[i]),
+            });
+            cursor = cursor.AddMonths(1);
+        }
+
+        return new RevenueForecastDto { HasSufficientHistory = true, History = history, Forecast = forecastPoints };
+    }
+
     /// <summary>Demand per car — which vehicles carry the fleet and which sit idle.</summary>
     public async Task<IReadOnlyList<CarUtilizationDto>> GetUtilizationAsync(
         DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
@@ -247,6 +301,9 @@ public class AnalyticsService(IFleetRentalDbContext db)
             cursor = cursor.AddMonths(1);
         }
     }
+
+    /// <summary>SSA's confidence band can dip below zero for a near-flat series; revenue never does.</summary>
+    private static decimal ToNonNegativeDecimal(float value) => (decimal)Math.Max(0f, value);
 
     private sealed record BookingRow(BookingStatus Status, DateOnly Start, DateOnly End, decimal DailyRate);
 }

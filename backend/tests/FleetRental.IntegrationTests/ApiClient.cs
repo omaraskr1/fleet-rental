@@ -165,4 +165,9 @@ public class ApiClient(HttpClient http)
     public record EventTypeBreakdownResult(string EventType, int BookingCount, int ApprovedCount, decimal EstimatedRevenue);
 
     public record MaintenanceCostPointResult(string PeriodLabel, string PeriodStart, decimal TotalCost, int RecordCount);
+
+    public record RevenueForecastPointResult(string PeriodLabel, string PeriodStart, decimal ForecastedRevenue, decimal LowerBound, decimal UpperBound);
+
+    public record RevenueForecastResult(
+        bool HasSufficientHistory, RevenuePointResult[] History, RevenueForecastPointResult[] Forecast);
 }
