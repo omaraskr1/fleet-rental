@@ -59,6 +59,47 @@ Status legend: `OPEN` · `IN PROGRESS` · `FIXED` · `WON'T FIX`
 - `ng test` — 104/104 passed, no regressions
 - Confirmed via computed style on a live booking-form input: `opacity: 0.45`, `font-style: italic`
 
+### BUG-004: Client tab pages (Fleet/Bookings/Profile) don't respond to real clicks or taps
+**Status:** FIXED (2026-08-08)
+**Found:** 2026-08-08
+**Component:** `frontend/src/app/features/tabs/tabs.page.ts`
+**Severity:** P0 — Blocker
+
+**Summary:** Inside the client-facing tabbed shell, nothing rendered by the active tab page responded to a real mouse click or touch tap — not car cards, not category filter chips, not buttons, not the sign-out button on Profile. The only thing that reliably responded to a click was the tab bar itself (Fleet / Bookings / Profile). This made the primary client app close to unusable: you could switch tabs, but not interact with anything a tab showed you.
+
+**Root cause:** `TabsPage`'s template declared its own `<ion-router-outlet />` as a direct child of `<ion-tabs>`. But `IonTabs` (the Angular wrapper component from `@ionic/angular`, confirmed by reading `node_modules/@ionic/angular/esm2022/directives/navigation/ion-tabs.mjs`) **already generates its own internal `<ion-router-outlet>`** inside a `.tabs-inner` wrapper whenever it has no `<ion-tab>` children — which is exactly this app's setup (tab content is routed via the Angular Router, not `<ion-tab>`). The app's manually-added outlet was therefore redundant: it got projected into `IonTabs`' trailing catch-all `<ng-content>` slot, landing as an empty, full-viewport-sized, `pointer-events: auto` sibling sitting on top of the real (correctly positioned, Ionic-managed) outlet inside `.tabs-inner`. Confirmed via `document.elementFromPoint()` at the exact screen position of visible, rendered content (car cards, filter chips, the sign-out button): it resolved to the empty `<ion-router-outlet><!----></ion-router-outlet>`, not the actual element being looked at. Matches the known upstream Ionic issue category — nested/managed `ion-router-outlet` inside `ion-tabs` — e.g. [ionic-team/ionic-framework#21748](https://github.com/ionic-team/ionic-framework/issues/21748) and [ionic-team/ionic#20219](https://github.com/ionic-team/ionic/issues/20219).
+
+**Fix:** Removed the app's manually-authored `<ion-router-outlet />` (and the now-unused `IonRouterOutlet` import) from `tabs.page.ts`. `IonTabs` provides the outlet on its own — no other change was needed, since Angular Router was already resolving to whichever outlet actually got registered for the tab content.
+
+**Verification:**
+- `ng test` — 104/104 passed, no regressions
+- Rebuilt and redeployed the Docker test stack; confirmed via real (non-JS-dispatched) clicks in the browser that car cards navigate to detail, and the sign-out button on Profile works and correctly clears the session
+- `document.elementFromPoint()` at car-card and profile-button coordinates now resolves to the actual element, not a phantom outlet
+
+**Note:** this was also the root cause of the separately-reported "client user cannot sign out" issue — same phantom-outlet layer was swallowing clicks on the Profile tab's sign-out button. Fixed by the same change; verified above.
+
+---
+
+## Feature change (not a bug)
+
+### Fleet/car data now requires a signed-in account
+**Status:** DONE (2026-08-08)
+**Requested:** 2026-08-08, by the user, alongside the BUG-004 fix
+
+**Summary:** Previously, browsing the fleet (car list, car detail, availability) was intentionally anonymous — clients could look before creating an account. Per the user's explicit request ("no user should see any data until he has login in the system"), this is now gated behind authentication end to end:
+
+- **Backend** (`CarsController.cs`): `GetAll`, `GetById`, `GetAvailability`, and `CheckAvailability` changed from `[AllowAnonymous]` to `[Authorize]` (any signed-in role, not just Admin).
+- **Frontend** (`app.routes.ts`): added `authGuard` to the `cars` tab route and the top-level `cars/:id` (car detail) route. `cars/:id/book` already had it.
+
+This is a real behavior change, not a bug fix — anonymous pre-signup browsing was a deliberate original design choice (see the git history / old doc comments), now deliberately reversed.
+
+**Test changes required:** several backend integration tests exercised anonymous car browsing as part of testing *other* things (mainly tenant isolation's fail-closed behavior). Updated to authenticate first where the test's actual point was unaffected by the auth change (e.g. `A_tenants_cars_are_invisible_to_another_tenant`, `A_cars_availability_is_not_readable_from_another_tenant`, the `Availability_reflects_exactly_the_approved_days` double-booking test), or redirected through `/api/auth/login` (which remains anonymous/tenant-header-scoped) where the test specifically needed to exercise tenant resolution without cars being available as a surface for that anymore (`An_unknown_company_code_yields_nothing_rather_than_everything`, `A_request_with_no_company_code_sees_nothing`, `A_suspended_tenant_is_treated_as_unknown` — these now assert `400 BadRequest` on login, since "no tenant resolved" fails before credential-checking, which is a different, earlier failure than the `401` used for "wrong credentials in a resolved tenant"). `Browsing_cars_does_not_require_an_account` renamed to `Browsing_cars_requires_an_account` and rewritten to assert the opposite.
+
+**Verification:**
+- `dotnet test` — 273/273 passed (177 unit + 96 integration)
+- `ng test` — 104/104 passed
+- Live browser: selecting a company now lands directly on Sign In with zero fleet data visible; only after signup/login does `/tabs/cars` show anything
+
 ---
 
 ## Open

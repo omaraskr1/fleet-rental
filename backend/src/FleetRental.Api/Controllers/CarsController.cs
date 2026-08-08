@@ -13,24 +13,24 @@ namespace FleetRental.Api.Controllers;
 public class CarsController(CarService cars, AvailabilityService availability) : ControllerBase
 {
     /// <summary>
-    /// The listing screen (feature 1). Anonymous so clients can browse the fleet
-    /// before creating an account.
+    /// The listing screen (feature 1). Requires a signed-in account — no fleet
+    /// data is visible to anonymous visitors, only after login/signup.
     /// </summary>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType<IReadOnlyList<CarListItemDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<CarListItemDto>>> GetAll(
         [FromQuery] CarCategory? category,
         CancellationToken ct)
     {
         // Only admins see maintenance and retired vehicles.
-        var includeUnavailable = User.Identity?.IsAuthenticated == true && User.IsAdmin();
+        var includeUnavailable = User.IsAdmin();
 
         return Ok(await cars.GetListAsync(includeUnavailable, category, ct));
     }
 
     [HttpGet("{id:guid}")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType<CarDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CarDetailDto>> GetById(Guid id, CancellationToken ct) =>
@@ -38,7 +38,7 @@ public class CarsController(CarService cars, AvailabilityService availability) :
 
     /// <summary>Per-car availability calendar (feature 2).</summary>
     [HttpGet("{id:guid}/availability")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType<CarAvailabilityDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<CarAvailabilityDto>> GetAvailability(
         Guid id,
@@ -52,7 +52,7 @@ public class CarsController(CarService cars, AvailabilityService availability) :
     /// a transaction, so a stale "available" here cannot create a double-booking.
     /// </summary>
     [HttpGet("{id:guid}/availability/check")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType<AvailabilityCheckDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<AvailabilityCheckDto>> CheckAvailability(
         Guid id,

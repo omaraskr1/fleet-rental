@@ -41,6 +41,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'cars', pathMatch: 'full' },
       {
         path: 'cars',
+        canActivate: [authGuard],
         loadComponent: () => import('./features/cars/car-list.page').then((m) => m.CarListPage),
       },
       {
@@ -61,7 +62,7 @@ export const routes: Routes = [
   // whole viewport on a phone.
   {
     path: 'cars/:id',
-    canActivate: [tenantGuard],
+    canActivate: [tenantGuard, authGuard],
     loadComponent: () => import('./features/cars/car-detail.page').then((m) => m.CarDetailPage),
   },
   {

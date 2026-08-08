@@ -8,8 +8,9 @@ import { TenantStore } from '../stores/tenant.store';
  *
  * The backend ignores this header entirely for authenticated requests — there the
  * tenant comes from the signed JWT, which cannot be tampered with. It matters for
- * anonymous calls: browsing the catalogue and logging in both happen before a
- * token exists, and this is what tells the API whose data to serve.
+ * anonymous calls: no fleet data is served without an account, but signing up and
+ * logging in both happen before a token exists, and this is what tells the API
+ * whose tenant to sign up or log into.
  */
 export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
   const code = inject(TenantStore).code();

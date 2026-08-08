@@ -25,15 +25,22 @@ public class AuthorizationTests(FleetRentalApiFactory factory) : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task Browsing_cars_does_not_require_an_account()
+    public async Task Browsing_cars_requires_an_account()
     {
         await factory.SeedCarAsync();
 
-        // Anonymous, but still tenant-scoped: the company code identifies whose
-        // catalogue is being browsed, and no account is needed to look.
-        var response = await factory.CreateTenantClient().Http.GetAsync("/api/cars");
+        // No fleet data is visible to an anonymous visitor — an account is
+        // required before any car, even just the public listing, is returned.
+        var anonymous = factory.CreateTenantClient();
+        var anonymousResponse = await anonymous.Http.GetAsync("/api/cars");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+
+        var client = factory.CreateTenantClient();
+        await client.SignUpAndAuthenticateAsync("browser@test.com");
+        var authenticatedResponse = await client.Http.GetAsync("/api/cars");
+
+        Assert.Equal(HttpStatusCode.OK, authenticatedResponse.StatusCode);
     }
 
     [Fact]

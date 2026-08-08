@@ -229,8 +229,9 @@ public class DoubleBookingTests(FleetRentalApiFactory factory) : IAsyncLifetime
         admin.Authenticate(await admin.LoginAsync(adminEmail, adminPassword, asAdmin: true));
         await admin.ApproveAsync(bookingId);
 
-        var anonymous = factory.CreateTenantClient();
-        var availability = await anonymous.GetAsync<ApiClient.AvailabilityResult>(
+        var viewer = factory.CreateTenantClient();
+        await viewer.SignUpAndAuthenticateAsync("avail-viewer@test.com");
+        var availability = await viewer.GetAsync<ApiClient.AvailabilityResult>(
             $"/api/cars/{carId}/availability?from={Day(65):yyyy-MM-dd}&to={Day(80):yyyy-MM-dd}");
 
         Assert.Equal(3, availability!.BookedDates.Length);

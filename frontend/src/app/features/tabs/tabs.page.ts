@@ -2,7 +2,6 @@ import { Component, computed, inject } from '@angular/core';
 import {
   IonIcon,
   IonLabel,
-  IonRouterOutlet,
   IonTabBar,
   IonTabButton,
   IonTabs,
@@ -17,10 +16,16 @@ import { LocaleStore } from '../../core/stores/locale.store';
 
 @Component({
   selector: 'app-tabs',
-  imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonRouterOutlet, IonBadge],
+  imports: [IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonBadge],
   template: `
     <ion-tabs>
-      <ion-router-outlet />
+      <!-- IonTabs generates its own internal ion-router-outlet inside
+           .tabs-inner when it has no ion-tab children (which is our case —
+           we route tab content via the Angular Router, not <ion-tab>).
+           Adding a second, manual one here left an empty, full-size,
+           pointer-events-enabled outlet sitting on top of the real one:
+           every click on tab content landed on that phantom outlet instead
+           of the page underneath it (see BUG-004 in BUGS.md). -->
 
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="cars" href="/tabs/cars">

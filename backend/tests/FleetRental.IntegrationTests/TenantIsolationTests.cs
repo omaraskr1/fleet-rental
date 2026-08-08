@@ -54,7 +54,9 @@ public class TenantIsolationTests(FleetRentalApiFactory factory) : IAsyncLifetim
         await factory.SeedCarAsync(beta, "Beta Truck");
 
         var alphaClient = factory.CreateTenantClient("alpha-rentals");
+        await alphaClient.SignUpAndAuthenticateAsync("a-viewer@alpha.com");
         var betaClient = factory.CreateTenantClient("beta-motors");
+        await betaClient.SignUpAndAuthenticateAsync("b-viewer@beta.com");
 
         var alphaCars = await alphaClient.GetAsync<CarSummary[]>("/api/cars");
         var betaCars = await betaClient.GetAsync<CarSummary[]>("/api/cars");
@@ -209,6 +211,7 @@ public class TenantIsolationTests(FleetRentalApiFactory factory) : IAsyncLifetim
         var betaCar = await factory.SeedCarAsync(beta, "Beta Truck");
 
         var alphaClient = factory.CreateTenantClient("alpha-rentals");
+        await alphaClient.SignUpAndAuthenticateAsync("alpha-browser@test.com");
         var response = await alphaClient.Http.GetAsync($"/api/cars/{betaCar}/availability");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -253,26 +256,43 @@ public class TenantIsolationTests(FleetRentalApiFactory factory) : IAsyncLifetim
     public async Task An_unknown_company_code_yields_nothing_rather_than_everything()
     {
         // The filters fail closed. If they failed open, a typo in the company code
-        // would expose every tenant's fleet at once.
+        // would expose every tenant's fleet at once. GET /api/cars now requires
+        // authentication outright (see Browsing_cars_requires_an_account in
+        // AuthorizationTests), so the still-anonymous surface that exercises tenant
+        // resolution is login: real credentials from a real tenant must not work
+        // under a bogus company code.
         var alpha = await factory.SeedTenantAsync("alpha-rentals");
-        await factory.SeedCarAsync(alpha, "Alpha Van");
+        var atAlpha = factory.CreateTenantClient("alpha-rentals");
+        await atAlpha.SignUpAsync("real-user@alpha.com");
 
         var stranger = factory.CreateTenantClient("no-such-company");
-        var cars = await stranger.GetAsync<CarSummary[]>("/api/cars");
+        var response = await stranger.Http.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = "real-user@alpha.com",
+            password = "ClientPass123",
+        });
 
-        Assert.Empty(cars!);
+        // No tenant resolves at all for a bogus code, so this fails before
+        // credential-checking ever runs — a 400 (bad request), not a 401.
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
     public async Task A_request_with_no_company_code_sees_nothing()
     {
         var alpha = await factory.SeedTenantAsync("alpha-rentals");
-        await factory.SeedCarAsync(alpha, "Alpha Van");
+        var atAlpha = factory.CreateTenantClient("alpha-rentals");
+        await atAlpha.SignUpAsync("real-user-2@alpha.com");
 
         var anonymous = new ApiClient(factory.CreateClient());
-        var cars = await anonymous.GetAsync<CarSummary[]>("/api/cars");
+        var response = await anonymous.Http.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = "real-user-2@alpha.com",
+            password = "ClientPass123",
+        });
 
-        Assert.Empty(cars!);
+        // Same as above: no header means no tenant, which fails closed at 400.
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -302,15 +322,24 @@ public class TenantIsolationTests(FleetRentalApiFactory factory) : IAsyncLifetim
     {
         var suspended = await factory.SeedTenantAsync("lapsed-fleet");
         await factory.SeedCarAsync(suspended, "Lapsed Van");
+
+        var client = factory.CreateTenantClient("lapsed-fleet");
+        await client.SignUpAsync("was-a-member@lapsed.com");
+
         await factory.SuspendTenantAsync(suspended);
 
         var lookup = await factory.CreateClient().GetAsync("/api/tenants/lapsed-fleet");
         Assert.Equal(HttpStatusCode.NotFound, lookup.StatusCode);
 
-        // And their catalogue stops resolving too.
-        var client = factory.CreateTenantClient("lapsed-fleet");
-        var cars = await client.GetAsync<CarSummary[]>("/api/cars");
-        Assert.Empty(cars!);
+        // And a login that worked before suspension stops resolving too — same
+        // "no tenant" 400 as an unknown company code, since a suspended tenant
+        // resolves to nothing at all.
+        var loginResponse = await factory.CreateTenantClient("lapsed-fleet").Http.PostAsJsonAsync("/api/auth/login", new
+        {
+            email = "was-a-member@lapsed.com",
+            password = "ClientPass123",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, loginResponse.StatusCode);
     }
 
     private sealed record CarSummary(Guid Id, string Name);
