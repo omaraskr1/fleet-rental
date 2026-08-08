@@ -5,6 +5,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!--
+      Microsoft.ML.TimeSeries' SSA forecaster (used by RevenueForecasterTests)
+      depends on native MKL binaries under runtimes/{rid}/native/. Without a
+      RuntimeIdentifiers list, NuGet only restores the assets for the RID the
+      SDK infers at restore time, which does not reliably match every OS this
+      suite runs on (this repo develops on Windows, CI runs on Linux) — the
+      Linux runner failed with a DllNotFoundException for MklImports.so until
+      this was added.
+    -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

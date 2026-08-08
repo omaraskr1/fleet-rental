@@ -5,6 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- See the matching comment in FleetRental.UnitTests.csproj: this project
+         transitively pulls in Microsoft.ML.TimeSeries and needs its native MKL
+         assets restored for every OS this suite runs on, not just the one the
+         SDK infers at restore time. -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
