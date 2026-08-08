@@ -42,6 +42,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Microsoft.ML.Mkl.Redist (pulled in transitively by Microsoft.ML.TimeSeries,
+      # for the revenue forecast's SSA model) bundles Intel's OpenMP runtime for
+      # Windows but not for Linux — it assumes the OS already provides
+      # libiomp5.so under that exact name. A bare ubuntu-latest image doesn't, so
+      # the SSA model fails to load with DllNotFoundException without this.
+      - name: Install MKL's OpenMP runtime dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libgomp.so.1 /usr/lib/x86_64-linux-gnu/libiomp5.so
+
       - name: Restore
         run: dotnet restore backend/FleetRental.slnx
 
