@@ -154,7 +154,13 @@
       "cancel": "إلغاء",
       "reasonPlaceholder": "السبب (يظهر للعميل ضمن الإشعار)",
       "decisionNote": "ملاحظة القرار: {{reason}}",
-      "empty": "لا يوجد شيء هنا."
+      "empty": "لا يوجد شيء هنا.",
+      "likelyApprove": "الموافقة مرجحة",
+      "uncertain": "غير محسوم",
+      "likelyReject": "الرفض مرجح",
+      "predictionTooltip": "تمت الموافقة على {{percent}}٪ من الطلبات المشابهة سابقًا.",
+      "sortByLikelihood": "ترتيب حسب الترجيح",
+      "predictionLearning": "تبدأ توقعات الموافقة بعد البتّ في {{minimum}} طلبًا — {{count}} حتى الآن."
     },
     "calendar": {
       "title": "تقويم الأسطول",

@@ -154,7 +154,13 @@
       "cancel": "Cancel",
       "reasonPlaceholder": "Reason (shown to the client in their notification)",
       "decisionNote": "Decision note: {{reason}}",
-      "empty": "Nothing here."
+      "empty": "Nothing here.",
+      "likelyApprove": "Likely approve",
+      "uncertain": "Uncertain",
+      "likelyReject": "Likely reject",
+      "predictionTooltip": "{{percent}}% of similar past requests were approved by your team.",
+      "sortByLikelihood": "Sort by likelihood",
+      "predictionLearning": "Approval predictions start once {{minimum}} requests have been decided — {{count}} so far."
     },
     "calendar": {
       "title": "Fleet calendar",

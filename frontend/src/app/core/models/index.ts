@@ -294,6 +294,25 @@ export interface EventTypeBreakdown {
   estimatedRevenue: number;
 }
 
+export interface BookingApprovalPrediction {
+  bookingId: string;
+  /** Calibrated 0..1 — roughly the share of similar past requests that were approved. */
+  approvalProbability: number;
+}
+
+/**
+ * hasSufficientData is false until the fleet has decided enough bookings, both
+ * ways, for there to be a pattern worth imitating — predictions is empty in that
+ * case rather than filled with noise. trainedOnBookings and minimumRequired let
+ * the UI explain why there is nothing to show yet.
+ */
+export interface BookingApprovalPredictions {
+  hasSufficientData: boolean;
+  trainedOnBookings: number;
+  minimumRequired: number;
+  predictions: BookingApprovalPrediction[];
+}
+
 export interface MaintenanceCostPoint {
   periodLabel: string;
   periodStart: IsoDate;

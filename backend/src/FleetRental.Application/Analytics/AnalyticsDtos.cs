@@ -164,6 +164,33 @@ public sealed record CarProfitabilityDto
     public required CarProfitabilityRecommendation Recommendation { get; init; }
 }
 
+/// <summary>How likely this fleet's own past decisions say a pending request is to be approved.</summary>
+public sealed record BookingApprovalPredictionDto
+{
+    public required Guid BookingId { get; init; }
+
+    /// <summary>Calibrated 0..1 — "roughly this share of similar past requests were approved".</summary>
+    public required double ApprovalProbability { get; init; }
+}
+
+/// <summary>
+/// Predictions for every pending request. <see cref="HasSufficientData"/> is false
+/// until the fleet has decided enough bookings — and enough of them both ways — for
+/// there to be a pattern worth imitating; <see cref="Predictions"/> is empty in that
+/// case rather than filled with noise. <see cref="TrainedOnBookings"/> is surfaced so
+/// the UI can say *why* there is nothing to show yet.
+/// </summary>
+public sealed record BookingApprovalPredictionsDto
+{
+    public required bool HasSufficientData { get; init; }
+
+    public required int TrainedOnBookings { get; init; }
+
+    public required int MinimumRequired { get; init; }
+
+    public required IReadOnlyList<BookingApprovalPredictionDto> Predictions { get; init; }
+}
+
 /// <summary>Where demand for a category is heading, relative to how it has recently behaved.</summary>
 public enum DemandTrend
 {
