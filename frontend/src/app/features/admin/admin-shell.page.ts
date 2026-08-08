@@ -61,9 +61,17 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
     </ion-content>
   `,
   styles: `
-    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100%; }
+    /* Angular components default to display:inline; without this the host
+       never reports a real height, so .layout's min-height:100% resolves
+       against nothing and the shorter column (aside) leaves unpainted
+       canvas showing through below its content instead of the theme
+       background. */
+    :host { display: block; min-height: 100%; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100%;
+              background: var(--ion-background-color); color: var(--ion-text-color); }
     aside { border-inline-end: 1px solid var(--ion-color-light-shade);
-            padding: 20px 12px; display: flex; flex-direction: column; gap: 20px; }
+            padding: 20px 12px; display: flex; flex-direction: column; gap: 20px;
+            background: var(--ion-background-color); }
     .brand { padding: 0 8px; display: flex; flex-direction: column; }
     .brand small { color: var(--ion-color-medium); font-size: 0.8rem; }
     nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }

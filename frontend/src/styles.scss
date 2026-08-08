@@ -14,3 +14,13 @@
    .ion-palette-dark on <html> so the user's choice can override the system
    default, while still defaulting to it on first launch. */
 @use '@ionic/angular/css/palettes/dark.class.css';
+
+/* Ionic's default placeholder opacity (0.6) reads as near-identical to
+   filled text at a glance, especially on the dark palette — testers have
+   mistaken empty required fields for pre-filled ones. Push placeholders
+   further down and mark them italic so "empty" is unambiguous. */
+ion-input input::placeholder,
+ion-textarea textarea::placeholder {
+  opacity: 0.45 !important;
+  font-style: italic !important;
+}

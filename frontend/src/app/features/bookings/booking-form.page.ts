@@ -152,13 +152,19 @@ export class BookingFormPage implements OnInit {
     return Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1;
   });
 
-  protected readonly isValid = computed(
-    () =>
+  /**
+   * A plain method, not computed(): eventName/location are ngModel-bound
+   * plain fields, not signals, so a computed() here would cache its result
+   * against only startDate/endDate and never notice text typed afterward.
+   */
+  protected isValid(): boolean {
+    return (
       this.startDate() !== null &&
       this.endDate() !== null &&
       this.eventName.trim().length > 0 &&
-      this.location.trim().length > 0,
-  );
+      this.location.trim().length > 0
+    );
+  }
 
   ngOnInit(): void {
     void this.cars.loadAvailability(this.id());
