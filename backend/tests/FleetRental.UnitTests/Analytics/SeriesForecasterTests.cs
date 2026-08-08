@@ -7,16 +7,16 @@ namespace FleetRental.UnitTests.Analytics;
 /// known trend is enough to check SSA is wired up correctly and that the
 /// insufficient-history guard actually holds the line.
 /// </summary>
-public class RevenueForecasterTests
+public class SeriesForecasterTests
 {
     [Fact]
     public void Fewer_than_the_minimum_months_returns_insufficient_history()
     {
-        var history = Enumerable.Range(1, RevenueForecaster.MinimumHistoryMonths - 1)
+        var history = Enumerable.Range(1, SeriesForecaster.MinimumHistoryMonths - 1)
             .Select(i => (float)(i * 100))
             .ToArray();
 
-        var forecast = RevenueForecaster.Run(history, horizon: 3);
+        var forecast = SeriesForecaster.Run(history, horizon: 3);
 
         Assert.False(forecast.HasSufficientHistory);
         Assert.Empty(forecast.Values);
@@ -27,8 +27,8 @@ public class RevenueForecasterTests
     {
         var history = Enumerable.Range(1, 12).Select(i => (float)(i * 100)).ToArray();
 
-        Assert.False(RevenueForecaster.Run(history, horizon: 0).HasSufficientHistory);
-        Assert.False(RevenueForecaster.Run(history, horizon: -1).HasSufficientHistory);
+        Assert.False(SeriesForecaster.Run(history, horizon: 0).HasSufficientHistory);
+        Assert.False(SeriesForecaster.Run(history, horizon: -1).HasSufficientHistory);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class RevenueForecasterTests
     {
         var history = Enumerable.Range(1, 12).Select(i => (float)(i * 100)).ToArray();
 
-        var forecast = RevenueForecaster.Run(history, horizon: 3);
+        var forecast = SeriesForecaster.Run(history, horizon: 3);
 
         Assert.True(forecast.HasSufficientHistory);
         Assert.Equal(3, forecast.Values.Length);
@@ -50,14 +50,14 @@ public class RevenueForecasterTests
     /// coverage for a real bug caught while wiring this up against live data.
     /// </summary>
     [Theory]
-    [InlineData(RevenueForecaster.MinimumHistoryMonths)]
-    [InlineData(RevenueForecaster.MinimumHistoryMonths + 1)]
-    [InlineData(RevenueForecaster.MinimumHistoryMonths + 2)]
+    [InlineData(SeriesForecaster.MinimumHistoryMonths)]
+    [InlineData(SeriesForecaster.MinimumHistoryMonths + 1)]
+    [InlineData(SeriesForecaster.MinimumHistoryMonths + 2)]
     public void Exactly_the_minimum_history_length_does_not_throw(int months)
     {
         var history = Enumerable.Range(1, months).Select(i => (float)(i * 100)).ToArray();
 
-        var forecast = RevenueForecaster.Run(history, horizon: 3);
+        var forecast = SeriesForecaster.Run(history, horizon: 3);
 
         Assert.True(forecast.HasSufficientHistory);
         Assert.Equal(3, forecast.Values.Length);
@@ -71,7 +71,7 @@ public class RevenueForecasterTests
         // the series mean the way a naive average-of-history model would.
         var history = Enumerable.Range(0, 12).Select(i => (float)(1200 + i * 100)).ToArray();
 
-        var forecast = RevenueForecaster.Run(history, horizon: 1);
+        var forecast = SeriesForecaster.Run(history, horizon: 1);
 
         Assert.True(forecast.HasSufficientHistory);
         Assert.True(forecast.Values[0] > history[^1],
@@ -85,7 +85,7 @@ public class RevenueForecasterTests
         // constant band would mean the confidence interval isn't doing anything.
         var history = Enumerable.Range(0, 12).Select(i => (float)(1000 + (i % 4) * 50)).ToArray();
 
-        var forecast = RevenueForecaster.Run(history, horizon: 3);
+        var forecast = SeriesForecaster.Run(history, horizon: 3);
 
         var firstWidth = forecast.UpperBound[0] - forecast.LowerBound[0];
         var lastWidth = forecast.UpperBound[^1] - forecast.LowerBound[^1];

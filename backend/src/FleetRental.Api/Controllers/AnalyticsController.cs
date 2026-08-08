@@ -59,6 +59,13 @@ public class AnalyticsController(AnalyticsService analytics) : ControllerBase
         return Ok(await analytics.GetMaintenanceCostTrendAsync(f, t, ct));
     }
 
+    /// <summary>Forecast demand per vehicle category, for fleet composition decisions.</summary>
+    [HttpGet("category-demand")]
+    [ProducesResponseType<IReadOnlyList<CategoryDemandDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CategoryDemandDto>>> GetCategoryDemand(
+        [FromQuery] int months, CancellationToken ct) =>
+        Ok(await analytics.GetCategoryDemandAsync(months <= 0 ? 3 : months, ct));
+
     [HttpGet("revenue-forecast")]
     [ProducesResponseType<RevenueForecastDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<RevenueForecastDto>> GetRevenueForecast(

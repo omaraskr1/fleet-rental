@@ -4,7 +4,7 @@ namespace FleetRental.IntegrationTests;
 
 /// <summary>
 /// The revenue forecast endpoint. The SSA math itself is covered by
-/// RevenueForecasterTests against synthetic series — this suite only exercises
+/// SeriesForecasterTests against synthetic series — this suite only exercises
 /// what an HTTP round trip can prove: authorization, and the insufficient-history
 /// guard when a tenant has no settled bookings on file.
 /// </summary>
