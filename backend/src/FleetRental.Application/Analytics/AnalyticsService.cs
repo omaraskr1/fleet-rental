@@ -209,18 +209,19 @@ public class AnalyticsService(IFleetRentalDbContext db)
         {
             // No settled demand anywhere in the fleet: report the categories with
             // their capacity so the screen still lists them, but claim nothing.
-            return [.. carCounts.Select(c => EmptyDemand(c.Key.ToString(), c.Value)).OrderBy(d => d.Category)];
+            return [.. carCounts
+                .Select(c => CategoryDemandAnalyzer.NoHistory(c.Key.ToString(), c.Value))
+                .OrderBy(d => d.Category)];
         }
 
         var historyStart = new DateOnly(earliest.Value.Year, earliest.Value.Month, 1);
         var months = EnumerateMonths(historyStart, historyEnd).ToList();
 
         var result = carCounts
-            .Select(entry => BuildCategoryDemand(
+            .Select(entry => CategoryDemandAnalyzer.Analyze(
                 entry.Key.ToString(),
                 entry.Value,
-                [.. bookings.Where(b => b.Category == entry.Key).Select(b => (b.Start, b.End))],
-                months,
+                MonthlyDemand(months, [.. bookings.Where(b => b.Category == entry.Key).Select(b => (b.Start, b.End))]),
                 currentMonthStart,
                 horizonMonths))
             .OrderByDescending(d => d.ForecastMonthlyAverage)
@@ -229,117 +230,20 @@ public class AnalyticsService(IFleetRentalDbContext db)
         return [.. result];
     }
 
-    private static CategoryDemandDto BuildCategoryDemand(
-        string category,
-        int carCount,
-        IReadOnlyList<(DateOnly Start, DateOnly End)> bookings,
+    /// <summary>Booked car-days per month for one category's bookings.</summary>
+    private static List<DemandPointDto> MonthlyDemand(
         IReadOnlyList<DateOnly> months,
-        DateOnly forecastStart,
-        int horizonMonths)
-    {
-        var history = months
-            .Select(monthStart =>
-            {
-                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-                return new DemandPointDto
-                {
-                    PeriodLabel = monthStart.ToString("MMM yyyy"),
-                    PeriodStart = monthStart,
-                    BookedDays = bookings.Sum(b => OverlapDays(b.Start, b.End, monthStart, monthEnd)),
-                };
-            })
-            .ToList();
-
-        var forecast = SeriesForecaster.Run([.. history.Select(h => (float)h.BookedDays)], horizonMonths);
-
-        if (!forecast.HasSufficientHistory)
+        IReadOnlyList<(DateOnly Start, DateOnly End)> bookings) =>
+        [.. months.Select(monthStart =>
         {
-            return new CategoryDemandDto
+            var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+            return new DemandPointDto
             {
-                Category = category,
-                CarCount = carCount,
-                HasSufficientHistory = false,
-                History = history,
-                Forecast = [],
-                Trend = DemandTrend.Unknown,
-                RecentMonthlyAverage = Math.Round(RecentAverage(history), 1),
-                ForecastMonthlyAverage = 0,
+                PeriodLabel = monthStart.ToString("MMM yyyy"),
+                PeriodStart = monthStart,
+                BookedDays = bookings.Sum(b => OverlapDays(b.Start, b.End, monthStart, monthEnd)),
             };
-        }
-
-        var forecastPoints = new List<DemandPointDto>(horizonMonths);
-        var cursor = forecastStart;
-        for (var i = 0; i < horizonMonths; i++)
-        {
-            forecastPoints.Add(new DemandPointDto
-            {
-                PeriodLabel = cursor.ToString("MMM yyyy"),
-                PeriodStart = cursor,
-                // Negative booked days are not a thing SSA knows to avoid.
-                BookedDays = Math.Round(Math.Max(0, forecast.Values[i]), 1),
-            });
-            cursor = cursor.AddMonths(1);
-        }
-
-        var recentAverage = RecentAverage(history);
-        var forecastAverage = forecastPoints.Average(p => p.BookedDays);
-
-        return new CategoryDemandDto
-        {
-            Category = category,
-            CarCount = carCount,
-            HasSufficientHistory = true,
-            History = history,
-            Forecast = forecastPoints,
-            Trend = ClassifyTrend(recentAverage, forecastAverage),
-            RecentMonthlyAverage = Math.Round(recentAverage, 1),
-            ForecastMonthlyAverage = Math.Round(forecastAverage, 1),
-        };
-    }
-
-    /// <summary>The trailing months the forecast is judged against, not the whole history.</summary>
-    private static double RecentAverage(IReadOnlyList<DemandPointDto> history) =>
-        history.Count == 0 ? 0 : history.TakeLast(TrendComparisonMonths).Average(h => h.BookedDays);
-
-    /// <summary>
-    /// A category is only called rising or declining when the forecast differs from
-    /// recent months by more than <see cref="TrendSignificanceThreshold"/>. Without a
-    /// dead band, ordinary month-to-month noise would flip the label every refresh
-    /// and the word "rising" would stop meaning anything.
-    /// </summary>
-    private static DemandTrend ClassifyTrend(double recentAverage, double forecastAverage)
-    {
-        if (recentAverage <= 0)
-        {
-            // Nothing to compare against: any forecast above zero is a genuine
-            // pickup from a standing start, and zero-to-zero is simply steady.
-            return forecastAverage > 0 ? DemandTrend.Rising : DemandTrend.Steady;
-        }
-
-        var change = (forecastAverage - recentAverage) / recentAverage;
-
-        return change > TrendSignificanceThreshold ? DemandTrend.Rising
-            : change < -TrendSignificanceThreshold ? DemandTrend.Declining
-            : DemandTrend.Steady;
-    }
-
-    private static CategoryDemandDto EmptyDemand(string category, int carCount) => new()
-    {
-        Category = category,
-        CarCount = carCount,
-        HasSufficientHistory = false,
-        History = [],
-        Forecast = [],
-        Trend = DemandTrend.Unknown,
-        RecentMonthlyAverage = 0,
-        ForecastMonthlyAverage = 0,
-    };
-
-    /// <summary>How many trailing months the forecast is compared against.</summary>
-    private const int TrendComparisonMonths = 3;
-
-    /// <summary>Relative change below which demand is called steady rather than moving.</summary>
-    private const double TrendSignificanceThreshold = 0.10;
+        })];
 
     /// <summary>Demand per car — which vehicles carry the fleet and which sit idle.</summary>
     public async Task<IReadOnlyList<CarUtilizationDto>> GetUtilizationAsync(

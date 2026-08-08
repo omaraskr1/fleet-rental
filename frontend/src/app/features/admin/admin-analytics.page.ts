@@ -9,6 +9,8 @@ import type {
   CarProfitability,
   CarProfitabilityRecommendation,
   CarUtilization,
+  CategoryDemand,
+  DemandTrend,
   EventTypeBreakdown,
   MaintenanceCostPoint,
   RevenueForecast,
@@ -126,6 +128,56 @@ import type {
             </table>
           </div>
           <p class="footnote">{{ locale.t('admin.analytics.profitabilityNote') }}</p>
+        }
+      </section>
+
+      <section class="chart-card">
+        <h2>{{ locale.t('admin.analytics.categoryDemand') }}</h2>
+        @if (categoryDemand().length === 0) {
+          <p class="state small">{{ locale.t('admin.analytics.noData') }}</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ locale.t('admin.analytics.vehicleType') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.fleetSize') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.recentDemand') }}</th>
+                  <th class="num">{{ locale.t('admin.analytics.forecastDemand') }}</th>
+                  <th>{{ locale.t('admin.analytics.trend') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of categoryDemand(); track row.category) {
+                  <tr>
+                    <td>{{ locale.t('enums.category.' + row.category) }}</td>
+                    <td class="num">{{ row.carCount }}</td>
+                    <td class="num">
+                      @if (row.hasSufficientHistory) {
+                        {{ row.recentMonthlyAverage }} <span class="unit">{{ locale.t('admin.analytics.perMonth') }}</span>
+                      } @else {
+                        {{ locale.t('admin.analytics.notApplicable') }}
+                      }
+                    </td>
+                    <td class="num">
+                      @if (row.hasSufficientHistory) {
+                        {{ row.forecastMonthlyAverage }} <span class="unit">{{ locale.t('admin.analytics.perMonth') }}</span>
+                      } @else {
+                        {{ locale.t('admin.analytics.notApplicable') }}
+                      }
+                    </td>
+                    <td>
+                      <span class="verdict" [class]="trendClass(row.trend)"
+                            [title]="row.trend === 'Unknown' ? locale.t('admin.analytics.trendUnknownHint') : ''">
+                        {{ locale.t('admin.analytics.trend' + row.trend) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="footnote">{{ locale.t('admin.analytics.categoryDemandNote') }}</p>
         }
       </section>
 
@@ -290,6 +342,13 @@ import type {
     .verdict.keep { background: var(--ion-color-success-tint); color: var(--ion-color-success-shade); }
     .verdict.review { background: var(--ion-color-warning-tint); color: var(--ion-color-warning-shade); }
     .verdict.retire { background: var(--ion-color-danger-tint); color: var(--ion-color-danger-shade); }
+    .verdict.rising { background: var(--ion-color-success-tint); color: var(--ion-color-success-shade); }
+    .verdict.declining { background: var(--ion-color-danger-tint); color: var(--ion-color-danger-shade); }
+    .verdict.steady { background: var(--ion-color-light-shade); color: var(--ion-color-medium-shade); }
+    /* "Learning" must not look like a verdict — it is the absence of one. */
+    .verdict.learning { background: transparent; color: var(--ion-color-medium);
+                        border: 1px dashed var(--ion-color-medium); cursor: help; }
+    .unit { font-size: 0.68rem; color: var(--ion-color-medium); }
     .footnote { font-size: 0.72rem; color: var(--ion-color-medium); margin: 12px 0 0; white-space: normal; }
 
     .legend { display: flex; align-items: center; gap: 6px; font-size: 0.72rem;
@@ -323,6 +382,7 @@ export class AdminAnalyticsPage implements OnInit {
   protected readonly maintenanceTrend = signal<MaintenanceCostPoint[]>([]);
   protected readonly revenueForecast = signal<RevenueForecast | null>(null);
   protected readonly profitability = signal<CarProfitability[]>([]);
+  protected readonly categoryDemand = signal<CategoryDemand[]>([]);
 
   protected readonly maxRevenue = computed(() =>
     Math.max(1, ...this.revenueTrend().map((p) => p.estimatedRevenue)),
@@ -361,16 +421,19 @@ export class AdminAnalyticsPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [overview, revenueTrend, utilization, eventTypes, maintenanceTrend, revenueForecast, profitability] =
-        await Promise.all([
-          this.api.getAnalyticsOverview(),
-          this.api.getRevenueTrend(),
-          this.api.getUtilization(),
-          this.api.getEventTypeBreakdown(),
-          this.api.getMaintenanceCostTrend(),
-          this.api.getRevenueForecast(),
-          this.api.getProfitability(),
-        ]);
+      const [
+        overview, revenueTrend, utilization, eventTypes,
+        maintenanceTrend, revenueForecast, profitability, categoryDemand,
+      ] = await Promise.all([
+        this.api.getAnalyticsOverview(),
+        this.api.getRevenueTrend(),
+        this.api.getUtilization(),
+        this.api.getEventTypeBreakdown(),
+        this.api.getMaintenanceCostTrend(),
+        this.api.getRevenueForecast(),
+        this.api.getProfitability(),
+        this.api.getCategoryDemand(),
+      ]);
       this.overview.set(overview);
       this.revenueTrend.set(revenueTrend);
       this.utilization.set(utilization);
@@ -378,6 +441,7 @@ export class AdminAnalyticsPage implements OnInit {
       this.maintenanceTrend.set(maintenanceTrend);
       this.revenueForecast.set(revenueForecast);
       this.profitability.set(profitability);
+      this.categoryDemand.set(categoryDemand);
     } catch {
       this.error.set(this.locale.t('admin.analytics.loadError'));
     } finally {
@@ -398,6 +462,19 @@ export class AdminAnalyticsPage implements OnInit {
    */
   protected formatMoney(value: number): string {
     return new Intl.NumberFormat(this.locale.intlLocale(), { maximumFractionDigits: 0 }).format(value);
+  }
+
+  protected trendClass(trend: DemandTrend): string {
+    switch (trend) {
+      case 'Rising':
+        return 'rising';
+      case 'Declining':
+        return 'declining';
+      case 'Steady':
+        return 'steady';
+      default:
+        return 'learning';
+    }
   }
 
   protected verdictClass(recommendation: CarProfitabilityRecommendation): string {

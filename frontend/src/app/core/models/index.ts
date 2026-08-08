@@ -308,6 +308,31 @@ export type CarProfitabilityRecommendation = 'Keep' | 'Review' | 'ConsiderRetiri
  * directional — useful for ranking cars against each other, not for the books.
  * Only maintenanceCost is real money.
  */
+/** 'Unknown' means not enough settled months to say — deliberately not 'Steady'. */
+export type DemandTrend = 'Unknown' | 'Rising' | 'Steady' | 'Declining';
+
+export interface DemandPoint {
+  periodLabel: string;
+  periodStart: IsoDate;
+  bookedDays: number;
+}
+
+/**
+ * Forecast demand for one vehicle category paired with current capacity — the two
+ * together answer "buy another of these, or is one already sitting idle". Demand is
+ * booked car-days rather than revenue, so a price rise can't masquerade as growth.
+ */
+export interface CategoryDemand {
+  category: CarCategory;
+  carCount: number;
+  hasSufficientHistory: boolean;
+  history: DemandPoint[];
+  forecast: DemandPoint[];
+  trend: DemandTrend;
+  recentMonthlyAverage: number;
+  forecastMonthlyAverage: number;
+}
+
 export interface CarProfitability {
   carId: string;
   carName: string;
