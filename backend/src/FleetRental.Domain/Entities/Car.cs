@@ -57,6 +57,14 @@ public class Car : TenantEntity
     public CarStatus Status { get; private set; } = CarStatus.Active;
 
     /// <summary>
+    /// Secret the car's physical GPS device presents when reporting a location —
+    /// see <see cref="CarLocation"/>. Null until an admin first generates one;
+    /// regenerating invalidates the old value outright rather than allowing two
+    /// live keys, so a lost/compromised device can be cut off by rotating it.
+    /// </summary>
+    public string? GpsDeviceKey { get; private set; }
+
+    /// <summary>
     /// Most recent known reading. Nullable because odometer tracking is opt-in —
     /// entered by an admin, not read from telematics hardware this system does
     /// not have — and a car may simply never have had one recorded.
@@ -187,6 +195,22 @@ public class Car : TenantEntity
         }
 
         ServiceIntervalKm = km;
+        Touch();
+    }
+
+    /// <summary>
+    /// Issues a new device key, replacing any existing one. The caller supplies
+    /// the random value (Infrastructure's job, same split as password hashing)
+    /// so the domain stays free of a crypto dependency.
+    /// </summary>
+    public void RegenerateGpsDeviceKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new DomainException("Device key is required.");
+        }
+
+        GpsDeviceKey = key;
         Touch();
     }
 

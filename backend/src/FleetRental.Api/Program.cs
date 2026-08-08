@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using FleetRental.Api.Middleware;
+using FleetRental.Api.Realtime;
 using FleetRental.Application;
+using FleetRental.Application.Abstractions;
 using FleetRental.Infrastructure;
 using FleetRental.Infrastructure.Persistence;
 using FleetRental.Infrastructure.Security;
@@ -23,6 +25,9 @@ builder.Services
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddSignalR();
+builder.Services.AddScoped<ILocationBroadcaster, SignalRLocationBroadcaster>();
 
 // ---------- Auth ----------
 
@@ -53,6 +58,27 @@ builder.Services
 
             // Default is 5 minutes of leeway on expiry; that is more than this app wants.
             ClockSkew = TimeSpan.FromMinutes(1),
+        };
+
+        // A browser's WebSocket handshake cannot set an Authorization header, so
+        // the SignalR JS client sends the token as a query parameter instead
+        // (its documented, standard approach) — read it from there, but only for
+        // hub requests, so this does not become a second way to authenticate an
+        // ordinary REST call.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
         };
     });
 
@@ -143,6 +169,7 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<LocationHub>("/hubs/locations");
 
 // ---------- Startup migration + seed ----------
 

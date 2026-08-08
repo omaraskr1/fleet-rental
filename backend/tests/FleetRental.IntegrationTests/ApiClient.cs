@@ -237,6 +237,28 @@ public class ApiClient(HttpClient http)
         Guid Id, Guid CompanyId, string CompanyName, string Name, string Description,
         string Category, int Seats, decimal Rate, string PricingModel, string Status, string? LicensePlate);
 
+    // ---------- GPS ----------
+
+    public Task<HttpResponseMessage> ReportLocationAsync(
+        string deviceKey, double latitude, double longitude, DateTimeOffset? recordedAt = null) =>
+        http.PostAsJsonAsync("/api/gps/locations", new { deviceKey, latitude, longitude, recordedAt }, Json);
+
+    public Task<HttpResponseMessage> GetCarLocationsAsync() => http.GetAsync("/api/cars/locations");
+
+    public Task<HttpResponseMessage> GetGpsDeviceKeyAsync(Guid carId) =>
+        http.GetAsync($"/api/cars/{carId}/gps-device-key");
+
+    public async Task<string> RegenerateGpsDeviceKeyAndGetAsync(Guid carId)
+    {
+        var response = await http.PostAsync($"/api/cars/{carId}/gps-device-key/regenerate", null);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<GpsDeviceKeyResult>(Json))!.DeviceKey!;
+    }
+
+    public record GpsDeviceKeyResult(Guid CarId, string? DeviceKey);
+
+    public record CarLocationResult(Guid CarId, string CarName, double Latitude, double Longitude, DateTimeOffset RecordedAt);
+
     // ---------- Analytics ----------
 
     public record AnalyticsOverviewResult(

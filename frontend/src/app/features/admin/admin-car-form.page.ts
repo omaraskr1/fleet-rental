@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -7,7 +7,9 @@ import {
 } from '@ionic/angular/standalone';
 
 import { CarsStore } from '../../core/stores/cars.store';
+import { FeaturesStore } from '../../core/stores/features.store';
 import { LocaleStore } from '../../core/stores/locale.store';
+import { ApiService } from '../../core/services/api.service';
 import { CAR_CATEGORIES, PRICING_MODELS, type CarCategory, type CarStatus, type PricingModel } from '../../core/models';
 
 /**
@@ -83,6 +85,25 @@ import { CAR_CATEGORIES, PRICING_MODELS, type CarCategory, type CarStatus, type 
       </ion-card-content>
     </ion-card>
 
+    @if (isEditMode() && features.isEnabled('Gps')) {
+      <ion-card>
+        <ion-card-content>
+          <h2>{{ locale.t('admin.fleet.form.gpsDeviceKey') }}</h2>
+          <p class="muted">{{ locale.t('admin.fleet.form.gpsDeviceKeyHelp') }}</p>
+          <div class="device-key">
+            <code>{{ deviceKey() || locale.t('admin.fleet.form.gpsDeviceKeyNone') }}</code>
+            <ion-button size="small" fill="outline" [disabled]="regenerating()" (click)="regenerateDeviceKey()">
+              @if (regenerating()) {
+                <ion-spinner name="dots" />
+              } @else {
+                {{ locale.t('admin.fleet.form.gpsDeviceKeyRegenerate') }}
+              }
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    }
+
     @if (cars.error(); as error) {
       <ion-note color="danger" class="banner">{{ error }}</ion-note>
     }
@@ -97,6 +118,10 @@ import { CAR_CATEGORIES, PRICING_MODELS, type CarCategory, type CarStatus, type 
   `,
   styles: `
     h1 { font-size: 1.4rem; margin: 0 0 16px; }
+    h2 { font-size: 1rem; margin: 0; }
+    .muted { color: var(--ion-color-medium); font-size: 0.85rem; margin: 4px 0 12px; }
+    .device-key { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .device-key code { font-size: 0.85rem; word-break: break-all; }
     .banner { display: block; padding: 8px 0; white-space: pre-line; }
     ion-button { margin-top: 16px; max-width: 320px; }
   `,
@@ -105,8 +130,13 @@ export class AdminCarFormPage implements OnInit {
   readonly carId = input<string>();
 
   protected readonly cars = inject(CarsStore);
+  protected readonly features = inject(FeaturesStore);
   protected readonly locale = inject(LocaleStore);
+  private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+
+  protected readonly deviceKey = signal<string | null>(null);
+  protected readonly regenerating = signal(false);
 
   protected readonly categories = CAR_CATEGORIES;
   protected readonly pricingModels = PRICING_MODELS;
@@ -144,6 +174,33 @@ export class AdminCarFormPage implements OnInit {
     this.pricingModel = car.pricingModel;
     this.licensePlate = car.licensePlate ?? '';
     this.status = car.status;
+
+    // Attempted unconditionally rather than gated on features.isEnabled('Gps')
+    // — that signal may not have finished loading yet on a direct deep link to
+    // this page, and the template's own reactive check already hides the
+    // section if Gps turns out to be off, so a 403 here is harmless and simply
+    // leaves the section empty.
+    try {
+      const key = await this.api.getGpsDeviceKey(id);
+      this.deviceKey.set(key.deviceKey);
+    } catch {
+      // Non-critical to the form itself.
+    }
+  }
+
+  protected async regenerateDeviceKey(): Promise<void> {
+    const id = this.carId();
+    if (!id) {
+      return;
+    }
+
+    this.regenerating.set(true);
+    try {
+      const key = await this.api.regenerateGpsDeviceKey(id);
+      this.deviceKey.set(key.deviceKey);
+    } finally {
+      this.regenerating.set(false);
+    }
   }
 
   /** A plain method, not computed() — see BUG-001 in BUGS.md for why. */

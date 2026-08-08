@@ -13,7 +13,7 @@ import { FeaturesStore } from '../stores/features.store';
  * here rather than trusting an ngOnInit ordering avoids a race that would
  * otherwise redirect away from a feature that is actually enabled.
  */
-function featureGuard(key: 'Analytics' | 'Maintenance'): CanActivateFn {
+function featureGuard(key: 'Analytics' | 'Maintenance' | 'Gps'): CanActivateFn {
   return async () => {
     const features = inject(FeaturesStore);
     const router = inject(Router);
@@ -29,3 +29,5 @@ function featureGuard(key: 'Analytics' | 'Maintenance'): CanActivateFn {
 export const analyticsFeatureGuard: CanActivateFn = featureGuard('Analytics');
 
 export const maintenanceFeatureGuard: CanActivateFn = featureGuard('Maintenance');
+
+export const gpsFeatureGuard: CanActivateFn = featureGuard('Gps');

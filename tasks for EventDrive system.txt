@@ -27,8 +27,7 @@ and this will take us to module about mechanical of car and logs of it and insig
 - i want the theme to be light and dark
 
 - i want module for the admins of cars to track there inputs of money and outputs to see the profit of them
----------------------
-TO DO:
+
 
 -i want module for user to add and deleted and edit for his cars, what about if the user want to edit price of car and if the price is by day or by event
 
@@ -41,5 +40,8 @@ TO DO:
 -want to make plane for me to know all the costs that i will need to make this project published to production
 
 -i want generated marketing video i can show to the user and describe to him my idea and the project to sell it to him
-
+---------------------
+TO DO:
 -the cars has gps and i want to make the owners of cars track them using gps to see where it is
+
+-notification system in the app , as example if we see any wrong thing happen then we will want to send notification to the user and by that i don't want any thing to go out the app , i mean now in the app only for this task

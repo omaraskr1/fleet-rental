@@ -92,6 +92,7 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         // Order matters — children before parents, or the FKs reject the delete.
         await db.Database.ExecuteSqlRawAsync(
             """
+            DELETE FROM CarLocations;
             DELETE FROM BookedDays;
             DELETE FROM Bookings;
             DELETE FROM Events;
@@ -160,6 +161,20 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await db.SaveChangesAsync();
 
         return (email, password);
+    }
+
+    /// <summary>Assigns a GPS device key to a car directly, as if an admin had regenerated it.</summary>
+    public async Task SetGpsDeviceKeyAsync(Guid carId, string key)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        using var _ = tenantContext.BypassIsolation();
+
+        var car = await db.Cars.SingleAsync(c => c.Id == carId);
+        car.RegenerateGpsDeviceKey(key);
+        await db.SaveChangesAsync();
     }
 
     /// <summary>Sets a feature-toggle override directly, as if a platform admin had set it.</summary>

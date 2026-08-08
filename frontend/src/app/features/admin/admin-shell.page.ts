@@ -51,6 +51,9 @@ import { PreferencesToggleComponent } from '../../shared/preferences-toggle.comp
             @if (features.isEnabled('Analytics')) {
               <a routerLink="analytics" routerLinkActive="active">{{ locale.t('admin.analytics.title') }}</a>
             }
+            @if (features.isEnabled('Gps')) {
+              <a routerLink="locations" routerLinkActive="active">{{ locale.t('admin.locations.title') }}</a>
+            }
           </nav>
 
           <app-preferences-toggle />

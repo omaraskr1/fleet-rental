@@ -14,6 +14,11 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
         builder.Property(c => c.Name).IsRequired().HasMaxLength(150);
         builder.Property(c => c.Description).HasMaxLength(2000);
         builder.Property(c => c.LicensePlate).HasMaxLength(32);
+        builder.Property(c => c.GpsDeviceKey).HasMaxLength(64);
+
+        // The ingestion endpoint resolves a car by this key with no tenant
+        // context to narrow the search, so it must be unique platform-wide.
+        builder.HasIndex(c => c.GpsDeviceKey).IsUnique().HasFilter("[GpsDeviceKey] IS NOT NULL");
 
         builder.Property(c => c.Category).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(c => c.Status).HasConversion<string>().HasMaxLength(32).IsRequired();

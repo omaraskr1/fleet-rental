@@ -16,6 +16,7 @@ import type {
   CarProfitability,
   CarUtilization,
   CategoryDemand,
+  CarLocation,
   Company,
   CompanyAdmin,
   CreateBookingRequest,
@@ -29,6 +30,7 @@ import type {
   FeatureKey,
   FeatureToggle,
   FleetAvailability,
+  GpsDeviceKey,
   IsoDate,
   IssueStatus,
   LogServiceRequest,
@@ -436,6 +438,22 @@ export class ApiService {
       this.http.put<FeatureToggle>(`${this.base}/platform/companies/${tenantId}/features/${key}`, {
         isEnabled,
       }),
+    );
+  }
+
+  // ---------- GPS tracking ----------
+
+  getCarLocations(): Promise<CarLocation[]> {
+    return firstValueFrom(this.http.get<CarLocation[]>(`${this.base}/cars/locations`));
+  }
+
+  getGpsDeviceKey(carId: string): Promise<GpsDeviceKey> {
+    return firstValueFrom(this.http.get<GpsDeviceKey>(`${this.base}/cars/${carId}/gps-device-key`));
+  }
+
+  regenerateGpsDeviceKey(carId: string): Promise<GpsDeviceKey> {
+    return firstValueFrom(
+      this.http.post<GpsDeviceKey>(`${this.base}/cars/${carId}/gps-device-key/regenerate`, {}),
     );
   }
 

@@ -507,3 +507,18 @@ export interface FeatureToggle {
   key: FeatureKey;
   isEnabled: boolean;
 }
+
+// ---------- GPS tracking ----------
+
+export interface CarLocation {
+  carId: string;
+  carName: string;
+  latitude: number;
+  longitude: number;
+  recordedAt: string;
+}
+
+export interface GpsDeviceKey {
+  carId: string;
+  deviceKey: string | null;
+}

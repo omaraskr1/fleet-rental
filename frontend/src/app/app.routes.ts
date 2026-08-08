@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminGuard, authGuard, guestGuard } from './core/guards/auth.guard';
-import { analyticsFeatureGuard, maintenanceFeatureGuard } from './core/guards/feature.guard';
+import { analyticsFeatureGuard, gpsFeatureGuard, maintenanceFeatureGuard } from './core/guards/feature.guard';
 import { platformAuthGuard, platformGuestGuard } from './core/guards/platform-auth.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
 
@@ -143,6 +143,12 @@ export const routes: Routes = [
         canActivate: [analyticsFeatureGuard],
         loadComponent: () =>
           import('./features/admin/admin-analytics.page').then((m) => m.AdminAnalyticsPage),
+      },
+      {
+        path: 'locations',
+        canActivate: [gpsFeatureGuard],
+        loadComponent: () =>
+          import('./features/admin/admin-locations.page').then((m) => m.AdminLocationsPage),
       },
     ],
   },

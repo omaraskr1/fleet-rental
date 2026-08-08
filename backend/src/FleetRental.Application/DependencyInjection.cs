@@ -3,6 +3,7 @@ using FleetRental.Application.Auth;
 using FleetRental.Application.Availability;
 using FleetRental.Application.Bookings;
 using FleetRental.Application.Cars;
+using FleetRental.Application.Gps;
 using FleetRental.Application.Maintenance;
 using FleetRental.Application.Notifications;
 using FleetRental.Application.Platform;
@@ -31,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<PlatformCarService>();
         services.AddScoped<PlatformFeatureService>();
         services.AddScoped<TenantFeatureGate>();
+        services.AddScoped<GpsService>();
 
         return services;
     }

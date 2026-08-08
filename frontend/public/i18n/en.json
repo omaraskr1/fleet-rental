@@ -197,7 +197,11 @@
           "PerEvent": "Per event"
         },
         "licensePlateOptional": "License plate (optional)",
-        "save": "Save"
+        "save": "Save",
+        "gpsDeviceKey": "GPS device key",
+        "gpsDeviceKeyHelp": "Configure the car's physical GPS device with this key so its readings are recognized.",
+        "gpsDeviceKeyNone": "No device configured yet",
+        "gpsDeviceKeyRegenerate": "Regenerate"
       }
     },
     "maintenance": {
@@ -313,6 +317,12 @@
       "projected": "Projected",
       "noData": "No data in this range yet.",
       "loadError": "Could not load analytics. Please try again."
+    },
+    "locations": {
+      "title": "Locations",
+      "live": "Live",
+      "connecting": "Connecting…",
+      "empty": "No readings yet — locations appear here as soon as a car's GPS device reports in."
     }
   },
   "enums": {

@@ -1,6 +1,8 @@
 using FleetRental.Api.Extensions;
+using FleetRental.Api.Filters;
 using FleetRental.Application.Availability;
 using FleetRental.Application.Cars;
+using FleetRental.Application.Gps;
 using FleetRental.Domain.Enums;
 using FleetRental.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +12,7 @@ namespace FleetRental.Api.Controllers;
 
 [ApiController]
 [Route("api/cars")]
-public class CarsController(CarService cars, AvailabilityService availability) : ControllerBase
+public class CarsController(CarService cars, AvailabilityService availability, GpsService gps) : ControllerBase
 {
     /// <summary>
     /// The listing screen (feature 1). Requires a signed-in account — no fleet
@@ -29,12 +31,39 @@ public class CarsController(CarService cars, AvailabilityService availability) :
         return Ok(await cars.GetListAsync(includeUnavailable, category, ct));
     }
 
+    /// <summary>The fleet-wide "where is everything right now" read for the owner's map.</summary>
+    [HttpGet("locations")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    [RequireFeature(FeatureKey.Gps)]
+    [ProducesResponseType<IReadOnlyList<CarLocationDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CarLocationDto>>> GetLocations(CancellationToken ct) =>
+        Ok(await gps.GetLatestLocationsAsync(ct));
+
     [HttpGet("{id:guid}")]
     [Authorize]
     [ProducesResponseType<CarDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CarDetailDto>> GetById(Guid id, CancellationToken ct) =>
         Ok(await cars.GetByIdAsync(id, ct));
+
+    /// <summary>
+    /// Admin-only view of the device key, kept off <see cref="CarDetailDto"/>
+    /// (which clients also read) so a booking client can never see it.
+    /// </summary>
+    [HttpGet("{id:guid}/gps-device-key")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    [RequireFeature(FeatureKey.Gps)]
+    [ProducesResponseType<GpsDeviceKeyDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<GpsDeviceKeyDto>> GetGpsDeviceKey(Guid id, CancellationToken ct) =>
+        Ok(await gps.GetDeviceKeyAsync(id, ct));
+
+    /// <summary>Issues a new key, invalidating the old one — for a lost/replaced/compromised device.</summary>
+    [HttpPost("{id:guid}/gps-device-key/regenerate")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    [RequireFeature(FeatureKey.Gps)]
+    [ProducesResponseType<GpsDeviceKeyDto>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<GpsDeviceKeyDto>> RegenerateGpsDeviceKey(Guid id, CancellationToken ct) =>
+        Ok(await gps.RegenerateDeviceKeyAsync(id, ct));
 
     /// <summary>Per-car availability calendar (feature 2).</summary>
     [HttpGet("{id:guid}/availability")]
