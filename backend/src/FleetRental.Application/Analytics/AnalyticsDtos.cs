@@ -124,3 +124,42 @@ public sealed record RevenueForecastDto
 
     public required IReadOnlyList<RevenueForecastPointDto> Forecast { get; init; }
 }
+
+/// <summary>
+/// Whether a car is earning its keep. Not a model's judgement call — a plain
+/// aggregation of numbers the fleet already tracks, ranked so the owner sees
+/// the worst performer first without doing the subtraction themselves.
+/// </summary>
+public enum CarProfitabilityRecommendation
+{
+    Keep,
+
+    /// <summary>Profitable, but barely used — capital tied up in a car that mostly sits idle.</summary>
+    Review,
+
+    /// <summary>Cost more to maintain than it earned in the range — a losing proposition as-is.</summary>
+    ConsiderRetiring,
+}
+
+/// <summary>Revenue against maintenance cost, per car, for deciding which vehicles are worth keeping.</summary>
+public sealed record CarProfitabilityDto
+{
+    public required Guid CarId { get; init; }
+
+    public required string CarName { get; init; }
+
+    public required decimal EstimatedRevenue { get; init; }
+
+    public required decimal MaintenanceCost { get; init; }
+
+    public required decimal NetProfit { get; init; }
+
+    /// <summary>Null when there was no revenue to take a percentage of, rather than a misleading 0%.</summary>
+    public double? ProfitMarginPercent { get; init; }
+
+    public required double UtilizationPercent { get; init; }
+
+    public required int BookingCount { get; init; }
+
+    public required CarProfitabilityRecommendation Recommendation { get; init; }
+}
