@@ -102,6 +102,30 @@ This is a real behavior change, not a bug fix — anonymous pre-signup browsing 
 
 ---
 
+### BUG-005: `scripts/e2e-api-test.sh` broken by the car-browsing auth change
+**Status:** FIXED (2026-08-10)
+**Found:** 2026-08-10
+**Component:** `scripts/e2e-api-test.sh`
+**Severity:** P2 — Medium (test tooling, not the product)
+
+**Summary:** The smoke-test script listed cars anonymously as its first step, a
+holdover from before "Fleet/car data now requires a signed-in account" (see
+above). `GET /api/cars` now correctly 401s for that anonymous call, so `CAR_ID`
+came back empty and every later step that needed a real car id (booking
+creation, approval, the double-booking check, the calendar check) cascaded
+into failure — 9 of 18 checks red, none of it a real product bug.
+
+**Fix:** Reordered the script so client signup runs first and the car listing
+(and the availability-calendar check later on) authenticate with that client's
+token, matching how the real app behaves post-change. Added a new explicit
+check that anonymous car listing still 401s, so this regression can't silently
+reappear. `README.md`'s check count updated from 19 to 20.
+
+**Verification:**
+- `bash scripts/e2e-api-test.sh` — 20/20 passed (was 10/19)
+
+---
+
 ## Open
 
 _(none)_
