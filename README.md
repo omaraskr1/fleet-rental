@@ -225,7 +225,7 @@ Client app at `http://localhost:4200`, admin panel at `/admin`.
 bash scripts/e2e-api-test.sh
 ```
 
-19 checks covering the full flow: browse → sign up → request → approve →
+20 checks covering the full flow: sign up → browse → request → approve →
 calendar, plus authorization boundaries and the double-booking race.
 
 ---

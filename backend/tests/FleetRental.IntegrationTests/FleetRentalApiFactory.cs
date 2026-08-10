@@ -272,6 +272,19 @@ public class FleetRentalApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Whether the notification pipeline has marked this booking as notified.</summary>
+    public async Task<bool> IsBookingNotifiedAsync(Guid bookingId)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<FleetRentalDbContext>();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+
+        using var _ = tenantContext.BypassIsolation();
+
+        var booking = await db.Bookings.SingleAsync(b => b.Id == bookingId);
+        return booking.NotifiedAt is not null;
+    }
+
     /// <summary>Counts held days for a car — the ground truth for availability.</summary>
     public async Task<int> CountBookedDaysAsync(Guid carId)
     {

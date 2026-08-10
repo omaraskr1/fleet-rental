@@ -12,14 +12,7 @@ no(){ echo "  FAIL: $1"; fail=$((fail+1)); }
 # Evaluate an expression against JSON on stdin, where `d` is the parsed document.
 q(){ node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{try{const d=JSON.parse(s);const r=eval(process.argv[1]);console.log(r===undefined?"":r)}catch(e){console.log("")}})' "$1"; }
 
-echo "== 1. Car listing (feature 1) =="
-CARS=$(curl -s -H "$TH" $API/cars)
-COUNT=$(echo "$CARS" | q 'd.length')
-[ "$COUNT" -ge 5 ] 2>/dev/null && ok "listed $COUNT cars" || no "expected >=5 cars, got '$COUNT'"
-CAR_ID=$(echo "$CARS" | q 'd[0].id')
-echo "  car: $(echo "$CARS" | q 'd[0].name') | photo: $(echo "$CARS" | q '(d[0].primaryPhotoUrl||"none").slice(0,50)') | availableToday: $(echo "$CARS" | q 'd[0].availableToday')"
-
-echo "== 2. Client signup (feature 5) =="
+echo "== 1. Client signup (feature 5) =="
 EMAIL="client$RANDOM$RANDOM@test.com"
 SIGNUP=$(curl -s -X POST $API/auth/signup -H "Content-Type: application/json" -H "$TH" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"TestPass123\",\"fullName\":\"Test Client\"}")
@@ -27,6 +20,19 @@ CTOK=$(echo "$SIGNUP" | q 'd.accessToken')
 [ -n "$CTOK" ] && ok "signed up, got token" || no "signup failed: $SIGNUP"
 ROLE=$(echo "$SIGNUP" | q 'd.user.role')
 [ "$ROLE" = "Client" ] && ok "public signup yields role=Client" || no "role was '$ROLE'"
+
+echo "== 2. Car listing (feature 1) =="
+# Fleet browsing requires a signed-in account (BUGS.md, 2026-08-08) — use the
+# client token just obtained above rather than an anonymous request.
+CARS=$(curl -s -H "$TH" -H "Authorization: Bearer $CTOK" $API/cars)
+COUNT=$(echo "$CARS" | q 'd.length')
+[ "$COUNT" -ge 5 ] 2>/dev/null && ok "listed $COUNT cars" || no "expected >=5 cars, got '$COUNT'"
+CAR_ID=$(echo "$CARS" | q 'd[0].id')
+echo "  car: $(echo "$CARS" | q 'd[0].name') | photo: $(echo "$CARS" | q '(d[0].primaryPhotoUrl||"none").slice(0,50)') | availableToday: $(echo "$CARS" | q 'd[0].availableToday')"
+
+echo "== 2b. Anonymous car listing is now blocked (feature change, BUGS.md) =="
+ANON_CARS=$(curl -s -o /dev/null -w "%{http_code}" -H "$TH" $API/cars)
+[ "$ANON_CARS" = "401" ] && ok "anonymous car listing -> 401" || no "expected 401, got $ANON_CARS"
 
 echo "== 3. Weak password rejected =="
 BAD=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/signup -H "Content-Type: application/json" -H "$TH" \
@@ -84,7 +90,7 @@ else
 fi
 
 echo "== 12. Calendar reflects the approval (feature 2) =="
-AV=$(curl -s -H "$TH" "$API/cars/$CAR_ID/availability?from=2026-09-25&to=2026-10-15")
+AV=$(curl -s -H "$TH" -H "Authorization: Bearer $CTOK" "$API/cars/$CAR_ID/availability?from=2026-09-25&to=2026-10-15")
 echo "  booked : $(echo "$AV" | q 'JSON.stringify(d.bookedDates)')"
 echo "  pending: $(echo "$AV" | q 'JSON.stringify(d.pendingDates)')"
 BD=$(echo "$AV" | q 'd.bookedDates.length')
